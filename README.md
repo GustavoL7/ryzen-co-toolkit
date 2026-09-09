@@ -1,7 +1,10 @@
-# Zen3 CO Toolkit — Tuning de eficiência para Ryzen 5000 (Curve Optimizer via CLI)
+# Ryzen CO Toolkit — Tuning de eficiência para AMD Ryzen (Curve Optimizer via CLI)
+
+> 🇧🇷 Português | [English](README.en.md)
 
 > Kit de scripts PowerShell + método validado para **undervolt via Curve Optimizer (CO)** em
-> **AMD Ryzen 5000 (Zen 3 / Vermeer)** — testado de ponta a ponta num **Ryzen 5 5600** real.
+> **CPUs AMD Ryzen** — testado de ponta a ponta num **Ryzen 5 5600** (Zen 3; veja
+> compatibilidade com outras gerações abaixo).
 > Objetivo: **mesma ou mais performance com menos tensão, menos temperatura e nenhum watt extra**.
 
 ⚠️ **Disclaimer**: mexer em registradores do CPU pode causar travamentos/reboots. Nada aqui altera
@@ -79,7 +82,7 @@ score + WHEA + dias de uso.
 ```powershell
 # 1. Clone o repo
 git clone <url-do-repo>
-cd zen3-co-toolkit
+cd ryzen-co-toolkit
 
 # 2. Baixa as ferramentas (nao precisa de admin)
 powershell -ExecutionPolicy Bypass -File scripts\1-baixar-ferramentas.ps1
