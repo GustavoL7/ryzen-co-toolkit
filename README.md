@@ -34,10 +34,42 @@ passos. Detalhes completos em [`docs/caso-real.md`](docs/caso-real.md).
 5. **Roda teste A/B**: mesma carga sintética com offset X vs Y, telemetria durante a carga + checagem de WHEA
 6. Ao final, você **grava a configuração vencedora na BIOS** (persistente)
 
+## Compatibilidade
+
+| Geração | Status | O que muda |
+|---|---|---|
+| **Zen 3 (Ryzen 5000 / Vermeer)** | ✅ **Validado de ponta a ponta** (caso real: R5 5600) | nada |
+| Zen+ / Zen 2 (1000-3000) | ⚠️ Parcial | Sem CO oficial (o equivalente é PBO + offset/LLC); telemetria e burn test funcionam |
+| **Zen 4 (7000) / Zen 5 (9000)** | ⚠️ Ajustável — não testado aqui | Ver abaixo |
+
+**O que é genérico vs o que é específico por CPU:**
+
+- **Genérico (funciona em qualquer geração)**: o dispatcher elevado (Task Scheduler), a telemetria
+  via LibreHardwareMonitor (temp, potência, SVI2, Effective Clocks), o teste A/B de carga, a checagem
+  de WHEA, e o **método em si** (degraus de -5, validar por score, validar idle/use real)
+- **Específico por CPU**: a **escrita de offsets no SMU**. O `ryzen-smu-cli` foi testado no Zen 3 —
+  em Zen 4/5 os endereços/argumentos do SMU mudam e o comportamento do CO também (no Zen 4/5 existe
+  Curve Shaper, que divide a curva por banda de temperatura/frequência, além de thermal limit dedicado)
+- O **CoreCycler** (incluído no kit) já suporta Zen 4/5 oficialmente (range de offsets maior,
+  `-50` como startValue para Zen 7000+)
+
+**Cada CPU é um "chip lottery"** — os offsets que funcionaram no nosso 5600 não são receita
+(nem para outro 5600). O método é: partir conservador (-15), testar em degraus, validar por
+score + WHEA + dias de uso.
+
+> 🤖 **Usando IA para adaptar ao seu CPU**: o processo é bem especificável para um agente de IA.
+> Dê ao seu assistente: (1) o modelo exato do CPU e a geração, (2) este repo como contexto,
+> (3) a permissão de executar os scripts. Tarefas que a IA precisa resolver por geração:
+> qual ferramenta escreve o CO (Zen 3: `ryzen-smu-cli`; Zen 4/5: `SMUDebugTool` ou BIOS),
+> range de offsets por geração, e como ler os endereços do PowerTable no seu SMU
+> ([SMUDebugTool](https://github.com/irusanov/SMUDebugTool) lista os PMTs por família).
+> Em Zen 4/5 o mais seguro pode ser simplesmente gravar o CO na BIOS e usar o kit só para
+> telemetria + teste A/B + validação.
+
 ## Requisitos
 
 - Windows 10/11 x64
-- CPU AMD Zen 3 (Ryzen 5000 / Vermeer) — os offsets CO via SMU funcionam nessa família
+- CPU AMD Zen 3 (Ryzen 5000 / Vermeer) — validado; outras gerações veja "Compatibilidade"
 - Conta de administrador (o UAC aparece 1x na instalação do dispatcher)
 - .NET 8+ runtime (o installer do PawnIO e o ryzen-smu-cli precisam; o script ajusta o roll-forward automaticamente)
 - BIOS com PBO habilitado (a maioria das B450/B550/X570 tem; caminho Gigabyte: `Advanced → AMD Overclocking → Precision Boost Overdrive → PBO = Advanced`)
