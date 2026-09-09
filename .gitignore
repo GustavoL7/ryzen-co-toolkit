@@ -1,0 +1,12 @@
+# Baixados (ferramentas de terceiros — licencas nao permitem redistribuicao)
+tools/*
+!tools/.gitkeep
+
+# Artefatos de runtime do dispatcher
+cmd.txt
+logs/*
+!logs/.gitkeep
+
+# Windows
+Thumbs.db
+desktop.ini
