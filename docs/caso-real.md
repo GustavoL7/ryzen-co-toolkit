@@ -11,7 +11,7 @@ não caça de recordes.
 
 A BIOS já tinha PBO + Curve Optimizer **-15 all-core**. Medição CPU-Z: **629 ST / 4675 MT**,
 ~4.35 GHz all-core, SVI2 ~1.116 V, 64 °C — ou seja, PBO quase sem ganho sobre stock
-(5600 stock faz ~4.4 GHz all-core).
+(5600 stock faz ~4.4 GHz all-core; baseline stock de referência: **599 ST / 4674 MT**).
 
 ## Método
 
@@ -27,6 +27,7 @@ A BIOS já tinha PBO + Curve Optimizer **-15 all-core**. Medição CPU-Z: **629 
 
 | Config | Clock all-core (carga) | SVI2 | Tctl | PPT | CPU-Z ST | CPU-Z MT |
 |---|---|---|---|---|---|---|
+| Stock (referência) | — | — | — | — | 599 | 4674 |
 | BIOS: CO -15 (início) | 4275 MHz | 1.087 V | 65.9 °C | 92.2 W | 629 | 4675 |
 | CO -20 (CLI) | 4288 MHz | 1.075 V | 65.8 °C | 92.2 W | — | — |
 | CO -25 (CLI) | 4342 MHz | 1.087 V | 65.9 °C | 92.2 W | — | — |
@@ -64,16 +65,18 @@ BIOS — que sobrevive a reboot E suspend.
 - PPT/TDC/EDC: como estavam (~92 W de PPT efetivo)
 - Scalar: 1 (auto)
 
-## Resultado líquido
+## Resultado líquido (vs stock)
 
-| | Antes | Depois | Delta |
+| | Stock | Final (BIOS CO -30 + Override +200) | Delta vs stock |
 |---|---|---|---|
-| CPU-Z Single | 629 | 641 | **+1.9%** |
-| CPU-Z Multi | 4675 | 4843 | **+3.6%** |
-| Tctl em carga | 64-66 °C | 65-66.5 °C | +1 °C |
-| Potência em carga | 92.2 W | 92.2 W | **0 W** |
+| CPU-Z Single | 599 | 641 | **+7.0%** |
+| CPU-Z Multi | 4674 | 4843 | **+3.6%** |
+| Tctl em carga | — | 65-66.5 °C | — |
+| Potência em carga | — | 92.2 W | — |
 
-+3.6% de multi e +1.9% de single **grátis** — mesmo consumo, mesma temperatura.
+Do ponto de partida CO -15 (629/4675): +1.9% single, +3.6% multi.
+
++3.6% de multi e +7.0% de single **grátis** — mesmo consumo, mesma temperatura.
 
 ## Pendências pós-sessão (protocolo de validação longa)
 

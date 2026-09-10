@@ -1,139 +1,145 @@
-# Ryzen CO Toolkit — Tuning de eficiência para AMD Ryzen (Curve Optimizer via CLI)
+# Ryzen CO Toolkit — Efficiency tuning for AMD Ryzen via Curve Optimizer (CLI)
 
-> 🇧🇷 Português | [English](README.en.md)
+> [🇧🇷 Português](README.pt-BR.md) | English
 
-> Kit de scripts PowerShell + método validado para **undervolt via Curve Optimizer (CO)** em
-> **CPUs AMD Ryzen** — testado de ponta a ponta num **Ryzen 5 5600** (Zen 3; veja
-> compatibilidade com outras gerações abaixo).
-> Objetivo: **mesma ou mais performance com menos tensão, menos temperatura e nenhum watt extra**.
+> PowerShell scripts + a field-validated method for **undervolting via Curve Optimizer (CO)**
+> on **AMD Ryzen** CPUs — tested end-to-end on a real **Ryzen 5 5600** (Zen 3).
+> Goal: **same or better performance with less voltage, less heat, and zero extra watts**.
 
-⚠️ **Disclaimer**: mexer em registradores do CPU pode causar travamentos/reboots. Nada aqui altera
-hardware permanentemente (os offsets aplicados via CLI são **voláteis** — reboot/suspend restauram
-a BIOS), mas use por sua conta e risco. Não nos responsabilizamos por instabilidade ou degradação.
+⚠️ **Disclaimer**: touching CPU registers can cause freezes/reboots. Nothing here permanently
+alters hardware (CLI-applied CO offsets are **volatile** — reboot/sleep restores the BIOS
+values), but use at your own risk. We are not liable for instability or degradation.
 
 ---
 
-## Resultado real (Ryzen 5 5600, Gigabyte B450M S2H, sessão de 2026-09-09)
+## Real-world results (Ryzen 5 5600, Gigabyte B450M S2H, 2026-09-09 session)
 
-| Config | CPU-Z Single | CPU-Z Multi | Clock all-core | Vcore (SVI2) | Temp Tctl | Potência |
+| Config | CPU-Z Single | CPU-Z Multi | All-core clock | Vcore (SVI2) | Tctl | Power |
 |---|---|---|---|---|---|---|
-| Ponto de partida (BIOS, CO -15) | 629 | 4675 | 4275-4350 MHz | 1.087 V | 65.9 °C | 92.2 W |
+| Stock (reference) | 599 | 4674 | — | — | — | — |
+| Starting point (BIOS, CO -15) | 629 | 4675 | 4275-4350 MHz | 1.087 V | 65.9 °C | 92.2 W |
 | CO -20 (CLI) | — | — | 4288 MHz | 1.075 V | 65.8 °C | 92.2 W |
 | CO -25 (CLI) | — | — | 4342 MHz | 1.087 V | 65.9 °C | 92.2 W |
-| CO -30 (CLI, máx AGESA) | 631 | 4845 | 4388-4425 MHz | 1.075 V | 65.0 °C | 92.2 W |
+| CO -30 (CLI, AGESA max) | 631 | 4845 | 4388-4425 MHz | 1.075 V | 65.0 °C | 92.2 W |
 | **FINAL: BIOS CO -30 + Boost Override +200** | **641** | **4843** | 4450 MHz | 1.104 V | 66.5 °C | 92.2 W |
 
-**+3.6% multi e +1.9% single com o MESMO consumo e temperatura.** Zero erros WHEA em todos os
-passos. Detalhes completos em [`docs/caso-real.md`](docs/caso-real.md).
+**+3.6% multi and +7.0% single vs stock (599/4674 → 641/4843) with the SAME power draw
+and temperature.** Zero WHEA errors throughout. From the CO -15 starting point (629/4675):
++3.6% MT, +1.9% ST. Full details in [`docs/caso-real.md`](docs/caso-real.md) (PT-BR).
 
 ---
 
-## O que este kit faz
+## What this kit does
 
-1. **Baixa as ferramentas** necessárias (CoreCycler, ryzen-smu-cli, LibreHardwareMonitor) com hash verificado
-2. **Instala um dispatcher elevado** via Task Scheduler (`PBO-Runner`) — você confirma o UAC **uma vez** e depois todos os comandos rodam sem pedir elevation de novo
-3. **Lê o estado atual** do CPU (offsets CO ativos, scalar, sensores: temp, potência, SVI2, clocks)
-4. **Aplica offsets CO por núcleo** via linha de comando (sobrepõe a BIOS até reboot)
-5. **Roda teste A/B**: mesma carga sintética com offset X vs Y, telemetria durante a carga + checagem de WHEA
-6. Ao final, você **grava a configuração vencedora na BIOS** (persistente)
+1. **Downloads the tools** (CoreCycler, ryzen-smu-cli, LibreHardwareMonitor) from official sources, hash-verified
+2. **Installs an elevated dispatcher** via Task Scheduler (`PBO-Runner`) — you confirm the UAC prompt **once**, then every command runs without new elevations
+3. **Reads the current CPU state** (active CO offsets, PBO scalar, sensors: temp, power, SVI2, clocks)
+4. **Applies per-core CO offsets** from the command line (overrides BIOS until reboot)
+5. **Runs an A/B test**: same synthetic load with offset X vs Y, telemetry during load + WHEA check
+6. At the end, you **save the winning configuration in the BIOS** (persistent)
 
-## Compatibilidade
+## Compatibility
 
-| Geração | Status | O que muda |
+| Generation | Status | What changes |
 |---|---|---|
-| **Zen 3 (Ryzen 5000 / Vermeer)** | ✅ **Validado de ponta a ponta** (caso real: R5 5600) | nada |
-| Zen+ / Zen 2 (1000-3000) | ⚠️ Parcial | Sem CO oficial (o equivalente é PBO + offset/LLC); telemetria e burn test funcionam |
-| **Zen 4 (7000) / Zen 5 (9000)** | ⚠️ Ajustável — não testado aqui | Ver abaixo |
+| **Zen 3 (Ryzen 5000 / Vermeer)** | ✅ **Validated end-to-end** (real case: R5 5600) | nothing |
+| Zen+ / Zen 2 (1000-3000) | ⚠️ Partial | No official CO (equivalent is PBO + offset/LLC); telemetry and burn test work |
+| **Zen 4 (7000) / Zen 5 (9000)** | ⚠️ Adaptable — not tested here | See below |
 
-**O que é genérico vs o que é específico por CPU:**
+**What is generic vs CPU-specific:**
 
-- **Genérico (funciona em qualquer geração)**: o dispatcher elevado (Task Scheduler), a telemetria
-  via LibreHardwareMonitor (temp, potência, SVI2, Effective Clocks), o teste A/B de carga, a checagem
-  de WHEA, e o **método em si** (degraus de -5, validar por score, validar idle/use real)
-- **Específico por CPU**: a **escrita de offsets no SMU**. O `ryzen-smu-cli` foi testado no Zen 3 —
-  em Zen 4/5 os endereços/argumentos do SMU mudam e o comportamento do CO também (no Zen 4/5 existe
-  Curve Shaper, que divide a curva por banda de temperatura/frequência, além de thermal limit dedicado)
-- O **CoreCycler** (incluído no kit) já suporta Zen 4/5 oficialmente (range de offsets maior,
-  `-50` como startValue para Zen 7000+)
+- **Generic (works on any generation)**: the elevated dispatcher (Task Scheduler), telemetry via
+  LibreHardwareMonitor (temp, power, SVI2, Effective Clocks), the A/B load test, the WHEA check,
+  and the **method itself** (-5 steps, validate by score, validate idle/real-world use)
+- **CPU-specific**: **writing offsets to the SMU**. `ryzen-smu-cli` was tested on Zen 3 — on
+  Zen 4/5 the SMU addresses/arguments change and CO behavior differs (Zen 4/5 adds Curve Shaper,
+  which splits the curve by temperature/frequency band, plus a dedicated thermal limit)
+- **CoreCycler** (bundled in the kit) officially supports Zen 4/5 already (larger offset range,
+  `-50` startValue for Zen 7000+)
 
-**Cada CPU é um "chip lottery"** — os offsets que funcionaram no nosso 5600 não são receita
-(nem para outro 5600). O método é: partir conservador (-15), testar em degraus, validar por
-score + WHEA + dias de uso.
+**Every CPU is a "silicon lottery"** — the offsets that worked on our 5600 are not a recipe
+(not even for another 5600). The value is the method: start conservative (-15), step in -5
+increments, validate by score + WHEA + days of real use.
 
-> 🤖 **Usando IA para adaptar ao seu CPU**: o processo é bem especificável para um agente de IA.
-> Dê ao seu assistente: (1) o modelo exato do CPU e a geração, (2) este repo como contexto,
-> (3) a permissão de executar os scripts. Tarefas que a IA precisa resolver por geração:
-> qual ferramenta escreve o CO (Zen 3: `ryzen-smu-cli`; Zen 4/5: `SMUDebugTool` ou BIOS),
-> range de offsets por geração, e como ler os endereços do PowerTable no seu SMU
-> ([SMUDebugTool](https://github.com/irusanov/SMUDebugTool) lista os PMTs por família).
-> Em Zen 4/5 o mais seguro pode ser simplesmente gravar o CO na BIOS e usar o kit só para
-> telemetria + teste A/B + validação.
+> 🤖 **Using AI to adapt it to your CPU**: the process is highly specifiable for an AI agent.
+> Give your assistant: (1) your exact CPU model and generation, (2) this repo as context,
+> (3) permission to run the scripts. Tasks the AI must resolve per generation: which tool
+> writes CO (Zen 3: `ryzen-smu-cli`; Zen 4/5: `SMUDebugTool` or BIOS), offset range per
+> generation, and how to read PowerTable addresses for your SMU
+> ([SMUDebugTool](https://github.com/irusanov/SMUDebugTool) lists PMTs per family).
+> On Zen 4/5, the safest route may be simply setting CO in the BIOS and using this kit for
+> telemetry + A/B testing + validation only.
 
-## Requisitos
+## Requirements
 
 - Windows 10/11 x64
-- CPU AMD Zen 3 (Ryzen 5000 / Vermeer) — validado; outras gerações veja "Compatibilidade"
-- Conta de administrador (o UAC aparece 1x na instalação do dispatcher)
-- .NET 8+ runtime (o installer do PawnIO e o ryzen-smu-cli precisam; o script ajusta o roll-forward automaticamente)
-- BIOS com PBO habilitado (a maioria das B450/B550/X570 tem; caminho Gigabyte: `Advanced → AMD Overclocking → Precision Boost Overdrive → PBO = Advanced`)
+- AMD Zen 3 CPU (Ryzen 5000 / Vermeer) — validated; other generations see "Compatibility"
+- Administrator account (UAC shows up 1x during dispatcher installation)
+- .NET 8+ runtime (PawnIO installer and ryzen-smu-cli need it; the script patches roll-forward automatically)
+- BIOS with PBO enabled (most B450/B550/X570 boards have it; Gigabyte path: `Advanced → AMD Overclocking → Precision Boost Overdrive → PBO = Advanced`)
 
 ## Quickstart
 
 ```powershell
-# 1. Clone o repo
-git clone <url-do-repo>
+# 1. Clone the repo
+git clone <repo-url>
 cd ryzen-co-toolkit
 
-# 2. Baixa as ferramentas (nao precisa de admin)
+# 2. Download the tools (no admin needed)
 powershell -ExecutionPolicy Bypass -File scripts\1-baixar-ferramentas.ps1
 
-# 3. Instala o dispatcher (UAC 1x)
+# 3. Install the dispatcher (UAC 1x)
 powershell -ExecutionPolicy Bypass -File scripts\2-instalar-dispatcher.ps1
 
-# 4. Estado atual do CPU
+# 4. Current CPU state
 powershell -ExecutionPolicy Bypass -File scripts\ler-offsets.ps1
 powershell -ExecutionPolicy Bypass -File scripts\ler-sensores.ps1
 
-# 5. Teste A/B: offset atual vs -25 all-core, 2 min de carga por fase
+# 5. A/B test: current offset vs -25 all-core, 2 min load per phase
 powershell -ExecutionPolicy Bypass -File scripts\teste-ab.ps1 -OffsetB "-25,-25,-25,-25,-25,-25"
 
-# 6. Apos os testes, GRAVE o melhor offset na BIOS (o CLI e volatil!)
+# 6. After testing, SAVE the best offset in the BIOS (the CLI is volatile!)
 ```
 
-## Como funciona o dispatcher (por que UAC 1x)
+## How the dispatcher works (why UAC only once)
 
-As ferramentas (SMU, sensores) exigem **execução como Administrador**. Em vez de confirmar o UAC
-a cada comando, o kit registra uma **tarefa agendada** (`PBO-Runner`) com `RunLevel Highest`:
-
-```
-scripts\exec.ps1  ← lê o comando de cmd.txt, executa elevado, grava saída em logs\out.txt
-```
-
-Daí em diante, qualquer script do kit dispara via `Start-ScheduledTask` **sem novo UAC**.
-Se travar/rebootar no meio de um teste, é só reiniciar: os offsets voltam pros da BIOS.
-
-## Avisos importantes (leia o guia completo)
-
-- **Não existe limite de 1.2 V para o Zen 3** — o limite real é o FIT individual do chip (típico 1.25–1.30 V sob carga). Undervolt via CO negativo é seguro por design. [`docs/guia-completo.md`](docs/guia-completo.md)
-- **CO -30 é o teto do AGESA**; acima disso é só com offset positivo em núcleos específicos
-- O modo de falha clássico do CO agressivo é **crash em idle/carga leve** (não em stress) — valide 2-3 dias de uso real antes de considerar pronto
-- **Valide por SCORE, não só por "não crashou"**: CO agressivo demais causa clock-stretching silencioso (compare Effective Clock vs Requested Clock no LibreHardwareMonitor)
-- Erros **WHEA-Logger ID 18/19** no Event Viewer = offset agressivo demais; recue 5 pontos (ou +3 no núcleo culpado — o APIC ID do evento aponta qual)
-- Nunca tune CPU e RAM ao mesmo tempo
-
-## Estrutura
+The tools (SMU, sensors) require **Administrator execution**. Instead of confirming UAC on
+every command, the kit registers a **scheduled task** (`PBO-Runner`) with `RunLevel Highest`:
 
 ```
-├── README.md, LICENSE
-├── docs/            guia-completo.md, caso-real.md, fontes.md
-├── scripts/         baixar-ferramentas, instalar-dispatcher, sensores, offsets, teste A/B, WHEA
-├── tools/           (gitignored) binarios baixados pelo script 1
-└── logs/            (gitignored) saidas de teste
+scripts\exec.ps1  ← reads the command from cmd.txt, executes elevated, writes output to logs\out.txt
 ```
 
-## Créditos das ferramentas de terceiros
+From then on, any kit script triggers it via `Start-ScheduledTask` **with no new UAC prompt**.
+If the machine crashes/reboots mid-test, just restart: offsets go back to the BIOS values.
 
-| Ferramenta | Autor | Licença |
+## Important warnings (read the full guide — PT-BR)
+
+- **There is no 1.2 V degradation limit for Zen 3** — the real limit is the chip's individual
+  FIT voltage (typically 1.25–1.30 V under load). Undervolting via negative CO is safe by design.
+  Full guide: [`docs/guia-completo.md`](docs/guia-completo.md)
+- **CO -30 is the AGESA floor**; beyond that only per-core positive offsets
+- The classic failure mode of aggressive CO is **crash at idle/light load** (not under stress) —
+  validate 2-3 days of real use before calling it done
+- **Validate by SCORE, not just "didn't crash"**: an aggressive-enough-to-fail CO causes silent
+  clock-stretching (compare Effective Clock vs Requested Clock in LibreHardwareMonitor)
+- **WHEA-Logger ID 18/19** in Event Viewer = offset too aggressive; back off 5 points (or +3 on
+  the failing core — the event's APIC ID tells you which)
+- Never tune CPU and RAM at the same time
+
+## Structure
+
+```
+├── README.md (EN), README.pt-BR.md, LICENSE
+├── docs/            guia-completo.md, caso-real.md, fontes.md (PT-BR, with dated sources)
+├── scripts/         tool downloader, dispatcher installer, sensors, offsets, A/B test, WHEA
+├── tools/           (gitignored) binaries downloaded by script 1
+└── logs/            (gitignored) test outputs
+```
+
+## Third-party tool credits
+
+| Tool | Author | License |
 |---|---|---|
 | [CoreCycler](https://github.com/sp00n/CoreCycler) | sp00n | GPL-3.0 |
 | [ryzen-smu-cli](https://github.com/rawhide-kobayashi/ryzen-smu-cli) | rawhide-kobayashi | GPL-3.0 |
@@ -141,4 +147,5 @@ Se travar/rebootar no meio de um teste, é só reiniciar: os offsets voltam pros
 | [PawnIO](https://pawnio.eu/) | namazso | LGPL-3.0 |
 | [PowerShell.HardwareMonitor](https://github.com/Lifailon/PowerShell.HardwareMonitor) | Lifailon | MIT |
 
-Este projeto não redistribui nenhum deles — o script `1-baixar-ferramentas.ps1` baixa direto das fontes oficiais.
+This project redistributes none of them — `scripts\1-baixar-ferramentas.ps1` downloads straight
+from the official sources.
