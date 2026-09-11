@@ -14,20 +14,32 @@ values), but use at your own risk. We are not liable for instability or degradat
 
 ---
 
-## Real-world results (Ryzen 5 5600, Gigabyte B450M S2H, 2026-09-09 session)
+## Real-world results (Ryzen 5 5600, Gigabyte B450M S2H)
 
-| Config | CPU-Z Single | CPU-Z Multi | All-core clock | Vcore (SVI2) | Tctl | Power |
+| Config | CPU-Z ST | CPU-Z MT | All-core | SVI2 | Tctl | PPT |
 |---|---|---|---|---|---|---|
-| Stock (reference) | 599 | 4674 | — | — | — | — |
-| Starting point (BIOS, CO -15 + Boost Override +100) | 629 | 4675 | 4275-4350 MHz | 1.087 V | 65.9 °C | 92.2 W |
-| CO -20 (CLI + Boost Override +100) | — | — | 4288 MHz | 1.075 V | 65.8 °C | 92.2 W |
-| CO -25 (CLI + Boost Override +100) | — | — | 4342 MHz | 1.087 V | 65.9 °C | 92.2 W |
-| CO -30 (CLI, AGESA max + Boost Override +100) | 631 | 4845 | 4388-4425 MHz | 1.075 V | 65.0 °C | 92.2 W |
-| **FINAL: BIOS CO -30 + Boost Override +200** | **641** | **4843** | 4450 MHz | 1.104 V | 66.5 °C | 92.2 W |
+| Stock | 599 | 4674 | — | — | — | — |
+| BIOS CO -15 + BO +100 (start) | 629 | 4675 | ~4.3 GHz | 1.087 V | 65.9 °C | 92.2 W |
+| CLI CO -20 → -25 (+100) | — | — | 4.29 → 4.34 GHz | ~1.08 V | ~66 °C | 92.2 W |
+| CLI CO -30, AGESA max (+100) | 631 | 4845 | ~4.4 GHz | 1.075 V | 65.0 °C | 92.2 W |
+| **FINAL: BIOS CO -30 + BO +200** | **641** | **4843** | 4.45 GHz | 1.104 V | 66.5 °C | 92.2 W |
 
-**+3.6% multi and +7.0% single vs stock (599/4674 → 641/4843) with the SAME power draw
-and temperature.** Zero WHEA errors throughout. From the CO -15 starting point (629/4675):
-+3.6% MT, +1.9% ST. Full details in [`docs/caso-real.md`](docs/caso-real.md) (PT-BR).
+**+3.6% MT, +7.0% ST vs stock at the SAME power.** Zero WHEA. Details: [`docs/caso-real.md`](docs/caso-real.md) (PT-BR).
+
+### Auto-tune validation (2026-09-11, menu option 6, BIOS CO -30 + BO +200)
+
+PPT pegged at 92.2 W on every step. Zero WHEA.
+
+| Step (all-core) | Tctl | ΔT | Effect. clock | Δclk | Stretch | Verdict |
+|---|---|---|---|---|---|---|
+| -5 | 67.9 °C | — | 3959 MHz | — | 100.1% | ✅ PASS |
+| -10 | 68.5 °C | +0.6 | 3983 MHz | +24 | 100% | ✅ PASS |
+| -15 | 68.6 °C | +0.1 | 4045 MHz | +62 | 99.9% | ✅ PASS |
+| -20 | 69.0 °C | +0.4 | 4122 MHz | +77 | 100.1% | ✅ PASS |
+| -25 | 69.0 °C | ±0 | 4176 MHz | +54 | 99.9% | ✅ PASS |
+| **-30 (best)** | 69.1 °C | +0.1 | 4226 MHz | +50 | 100% | ✅ **PASS** |
+
+**+267 MHz for +1.2 °C from -5 to -30 at the same power** — less voltage converts into more clock within the same budget.
 
 ---
 

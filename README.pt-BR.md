@@ -15,20 +15,32 @@ a BIOS), mas use por sua conta e risco. Não nos responsabilizamos por instabili
 
 ---
 
-## Resultado real (Ryzen 5 5600, Gigabyte B450M S2H, sessão de 2026-09-09)
+## Resultado real (Ryzen 5 5600, Gigabyte B450M S2H)
 
-| Config | CPU-Z Single | CPU-Z Multi | Clock all-core | Vcore (SVI2) | Temp Tctl | Potência |
+| Config | CPU-Z ST | CPU-Z MT | All-core | SVI2 | Tctl | PPT |
 |---|---|---|---|---|---|---|
-| Stock (referência) | 599 | 4674 | — | — | — | — |
-| Ponto de partida (BIOS, CO -15 + Boost Override +100) | 629 | 4675 | 4275-4350 MHz | 1.087 V | 65.9 °C | 92.2 W |
-| CO -20 (CLI + Boost Override +100) | — | — | 4288 MHz | 1.075 V | 65.8 °C | 92.2 W |
-| CO -25 (CLI + Boost Override +100) | — | — | 4342 MHz | 1.087 V | 65.9 °C | 92.2 W |
-| CO -30 (CLI, máx AGESA + Boost Override +100) | 631 | 4845 | 4388-4425 MHz | 1.075 V | 65.0 °C | 92.2 W |
-| **FINAL: BIOS CO -30 + Boost Override +200** | **641** | **4843** | 4450 MHz | 1.104 V | 66.5 °C | 92.2 W |
+| Stock | 599 | 4674 | — | — | — | — |
+| BIOS CO -15 + BO +100 (início) | 629 | 4675 | ~4,3 GHz | 1,087 V | 65,9 °C | 92,2 W |
+| CLI CO -20 → -25 (+100) | — | — | 4,29 → 4,34 GHz | ~1,08 V | ~66 °C | 92,2 W |
+| CLI CO -30, máx AGESA (+100) | 631 | 4845 | ~4,4 GHz | 1,075 V | 65,0 °C | 92,2 W |
+| **FINAL: BIOS CO -30 + BO +200** | **641** | **4843** | 4,45 GHz | 1,104 V | 66,5 °C | 92,2 W |
 
-**+3.6% multi e +7.0% single vs stock (599/4674 → 641/4843) com o MESMO consumo e
-temperatura.** Zero erros WHEA em todos os passos. Do ponto de partida CO -15 (629/4675):
-+3.6% MT, +1.9% ST. Detalhes completos em [`docs/caso-real.md`](docs/caso-real.md) (PT-BR).
+**+3,6% MT, +7,0% ST vs stock com o MESMO consumo.** Zero WHEA. Detalhes em [`docs/caso-real.md`](docs/caso-real.md).
+
+### Validação auto-tune (2026-09-11, opção 6 do menu, BIOS CO -30 + BO +200)
+
+PPT cravado em 92,2 W em todos os degraus. Zero WHEA.
+
+| Degrau (all-core) | Tctl | ΔT | Clock efet. | Δclk | Stretch | Veredito |
+|---|---|---|---|---|---|---|
+| -5 | 67,9 °C | — | 3959 MHz | — | 100,1% | ✅ PASS |
+| -10 | 68,5 °C | +0,6 | 3983 MHz | +24 | 100% | ✅ PASS |
+| -15 | 68,6 °C | +0,1 | 4045 MHz | +62 | 99,9% | ✅ PASS |
+| -20 | 69,0 °C | +0,4 | 4122 MHz | +77 | 100,1% | ✅ PASS |
+| -25 | 69,0 °C | ±0 | 4176 MHz | +54 | 99,9% | ✅ PASS |
+| **-30 (melhor)** | 69,1 °C | +0,1 | 4226 MHz | +50 | 100% | ✅ **PASS** |
+
+**+267 MHz por +1,2 °C de -5 a -30 com a mesma potência** — menos tensão vira mais clock dentro do mesmo orçamento.
 
 ---
 

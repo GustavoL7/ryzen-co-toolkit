@@ -108,7 +108,7 @@ Log bruto: `logs/` (gitignored) — `auto-tune-20260911-114338.log`.
 
 ### Leituras desta sessão
 
-- **Clock sobe à medida que o CO aprofunda** (+271 MHz de -5 a -30, mesmo PPT):
+- **Clock sobe à medida que o CO aprofunda** (+267 MHz efetivos e +1,2 °C de -5 a -30, mesmo PPT):
   menos tensão → mais headroom dentro do mesmo orçamento de potência. O próprio
   sweep mostra o benefício, sem precisar de benchmark externo.
 - **Stretch ~100% em todos os degraus** — depois do fix do burn em 12 threads;
