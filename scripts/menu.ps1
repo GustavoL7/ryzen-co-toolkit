@@ -1,5 +1,5 @@
 # Menu principal do ryzen-co-toolkit (PT-BR simples)
-# Uso: .\menu.ps1   (sem params; rode 1 vez e siga as opcoes 1 a 5)
+# Uso: .\menu.ps1   (sem params; rode 1 vez e siga as opcoes 1 a 7)
 $ErrorActionPreference = "Continue"
 $ScriptDir = Split-Path -Parent $PSCommandPath
 $root = Split-Path -Parent $ScriptDir
@@ -27,16 +27,18 @@ function Show-PreFlight {
 Show-PreFlight
 
 do {
-  Write-Host ""
+  try { if (-not [Console]::IsOutputRedirected) { Clear-Host } } catch {}
   Write-Host "=== Ryzen CO Toolkit - Menu ==="
   Write-Host "1 - Instalar (baixar ferramentas + registrar tarefa elevada)"
   Write-Host "2 - Ver estado atual (offsets + temperatura/consumo)"
   Write-Host "3 - Aplicar ajuste de voltagem por nucleo"
   Write-Host "4 - Testar comparando antes/depois (teste A/B)"
   Write-Host "5 - Checar erros de hardware (WHEA)"
+  Write-Host "6 - Ajuste automatico (recomendado para iniciantes)"
+  Write-Host "7 - Afinar por nucleo (se a opcao 6 falhou em algum degrau)"
   Write-Host "0 - Sair"
   Write-Host ""
-  $opcao = Read-Host "Escolha [0-5]"
+  $opcao = Read-Host "Escolha [0-7]"
 
   if ($opcao -eq "1") {
     if (-not (Test-Path -LiteralPath $toolsDir)) {
@@ -92,10 +94,26 @@ do {
   elseif ($opcao -eq "5") {
     & (Join-Path $ScriptDir "checar-whea.ps1")
   }
+  elseif ($opcao -eq "6") {
+    & (Join-Path $ScriptDir "auto-tune.ps1")
+  }
+  elseif ($opcao -eq "7") {
+    Write-Host "Valida cada nucleo separado com CoreCycler + Prime95."
+    $m = Read-Host "Modo: Rapido (R) ou Completo (C)? (Enter = Rapido)"
+    $modo = "Rapido"
+    if ($m -eq "C" -or $m -eq "c" -or $m -eq "Completo" -or $m -eq "completo") {
+      $modo = "Completo"
+    }
+    $n = Read-Host "Nucleos (ex.: 0,1,2 ou Enter = todos)"
+    if ([string]::IsNullOrWhiteSpace($n)) {
+      $n = "all"
+    }
+    & (Join-Path $ScriptDir "validar-nucleos.ps1") -Modo $modo -Nucleos $n
+  }
   elseif ($opcao -eq "0") {
     Write-Host "Ate logo!"
   }
   else {
-    Write-Host "Opcao invalida. Digite um numero de 0 a 5."
+    Write-Host "Opcao invalida. Digite um numero de 0 a 7."
   }
 } until ($opcao -eq "0")

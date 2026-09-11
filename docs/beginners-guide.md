@@ -50,6 +50,7 @@ You will see a menu with options 1 to 5 plus 0. Follow them in this order.
 1. Choose `5`. The menu shows whether any WHEA errors happened (checar-whea).
 2. If you see **WHEA ID 18 or 19**, your offset is too aggressive: back off **5 points** (e.g. from -30 to -25).
 3. Zero WHEA + better score = you may go 5 points further. WHEA or worse score = back off.
+4. To find out WHICH core fails, use menu option `7` (CoreCycler + Prime95: Quick ~4-6 min/core; Full takes hours; back off 5 points only on the failing core via option 3).
 
 ## Step 6 — Option 0: exit and save to BIOS
 

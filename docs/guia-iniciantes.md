@@ -50,6 +50,7 @@ Voce vera um menu com as opcoes 1 a 5 e 0. Siga nesta ordem.
 1. Escolha `5`. O menu mostra se houve erros WHEA (checar-whea).
 2. Se aparecer **WHEA ID 18 ou 19**, seu offset esta agressivo: recue **5 pontos** (ex.: de -30 para -25).
 3. Zero WHEA + score melhor = pode avancar 5 pontos. WHEA ou score pior = recue.
+4. Para descobrir QUAL nucleo falha, use a opcao `7` do menu (CoreCycler + Prime95: Rapido ~4-6 min/nucleo; Completo leva horas; quem falhar, recue 5 pontos so nele via opcao 3).
 
 ## Passo 6 — Opcao 0: sair e gravar na BIOS
 

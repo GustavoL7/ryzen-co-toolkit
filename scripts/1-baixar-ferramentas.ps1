@@ -40,6 +40,24 @@ if (-not (Test-Path "CoreCycler")) {
   Write-Host "[extraido] CoreCycler"
 }
 
+# Prime95 (Mersenne, portable) - motor de stress do CoreCycler (modo SSE)
+# Hash oficial (digest da release v30.19 b20 no site da Mersenne)
+Get-File -Url "https://download.mersenne.ca/gimps/v30/30.19/p95v3019b20.win64.zip" -Nome "p95.zip" -Sha256 "d9475f2ff3f4a6a701abc49a86a66126cb48abd10bda6fa87039d98fa8756bca"
+$p95destinos = @((Join-Path $tools "CoreCycler\test_programs\p95"))
+$ccAninhado = Join-Path $tools "CoreCycler\CoreCycler-v0.11.0.3\script-corecycler.ps1"
+if (Test-Path -LiteralPath $ccAninhado) {
+  $p95destinos += (Join-Path $tools "CoreCycler\CoreCycler-v0.11.0.3\test_programs\p95")
+}
+foreach ($p95dir in $p95destinos) {
+  New-Item -ItemType Directory -Force -Path $p95dir | Out-Null
+  if (-not (Test-Path (Join-Path $p95dir "prime95.exe"))) {
+    Expand-Archive -Path (Join-Path $tools "p95.zip") -DestinationPath $p95dir -Force
+    Write-Host "[extraido] Prime95 -> $p95dir"
+  } else {
+    Write-Host "[skip] Prime95 ja extraido em $p95dir"
+  }
+}
+
 # ryzen-smu-cli - aplica/lê offsets CO via SMU (Zen 3)
 # Hash TOFU (sem digest publicado; URL versionada 0.1.3 mantida, tamanho confere com API)
 Get-File -Url "https://github.com/rawhide-kobayashi/ryzen-smu-cli/releases/download/0.1.3/ryzen-smu-cli-0.1.3.zip" -Nome "ryzen-smu-cli.zip" -Sha256 "0131955f780566d43f464350c65de7f929dd9cb57a583c401fe7545712e98ffb"

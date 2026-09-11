@@ -42,13 +42,31 @@ function Invoke-Elevado {
   Start-ScheduledTask -TaskName "PBO-Runner"
 
   $fim = (Get-Date).AddSeconds($TimeoutSeg)
+  $plano = $false
+  try { $plano = [Console]::IsOutputRedirected } catch { $plano = $false }
+  $frames = @("|", "/", "-", "\")
+  $fi = 0
+  Write-Host "Aguardando PBO-Runner (logs/out.txt)..."
   while ((Get-Date) -lt $fim) {
     Start-Sleep -Seconds 1
     if (Test-Path -LiteralPath $outFile) {
       $parcial = Get-Content -LiteralPath $outFile -Raw -ErrorAction SilentlyContinue
       if ($null -ne $parcial -and $parcial -match "=== EXIT (OK|FAIL|BLOQUEADO) ===") { break }
     }
+    if ($plano) {
+      Write-Host ("aguardando PBO-Runner... {0}s" -f $fi)
+    } else {
+      try {
+        $top = [Console]::CursorTop
+        [Console]::SetCursorPosition(0, $top)
+        Write-Host ("{0} aguardando PBO-Runner... " -f $frames[$fi % 4]) -NoNewline
+      } catch {
+        Write-Host ("aguardando PBO-Runner... {0}s" -f $fi)
+      }
+    }
+    $fi++
   }
+  if (-not $plano) { Write-Host "" }
 
   if (-not (Test-Path -LiteralPath $outFile)) {
     Write-Host "ERRO: tempo esgotado aguardando o PBO-Runner (logs/out.txt nao criado em ${TimeoutSeg}s)."

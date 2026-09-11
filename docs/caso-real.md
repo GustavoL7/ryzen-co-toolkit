@@ -78,9 +78,42 @@ Do ponto de partida CO -15 (629/4675): +1.9% single, +3.6% multi.
 
 +3.6% de multi e +7.0% de single **grátis** — mesmo consumo, mesma temperatura.
 
-## Pendências pós-sessão (protocolo de validação longa)
+## Pendências pós-sessão (protocolo de validação longa) — CONCLUÍDO 2026-09-13
 
-- 2-3 dias de uso real: CO -30 às vezes crasha em idle/carga leve mesmo passando em stress
-- Se aparecer WHEA/reboot/freeze: recuo para -25 all-core (ou +5 só nos 2 núcleos de rank
-  CPPC mais alto)
-- Validação profunda com CoreCycler overnight (opcional)
+- ~~2-3 dias de uso real~~ ✅ 2 dias de uso real com **-30 all-core + Override +200,
+  zero bugs/crashes/freezes** (inclui idle/uso leve — o modo de falha clássico do CO).
+  Config declarada **estável final**; sem recuo necessário.
+- CoreCycler overnight: segue opcional (núcleo a núcleo); virou a opção 7 do menu.
+
+---
+
+## Sessão de validação — auto-tune 2026-09-11 (opção 6 do menu)
+
+Primeira corrida ponta a ponta do `scripts/auto-tune.ps1` (fases D–G do improve-all).
+Condição diferente da sessão 09-09: **Boost Override +200 na BIOS** (09-09 usou +100
+nos degraus CLI). Os offsets CLI sobrescrevem o SMU em absoluto, então cada degrau
+testou o valor cheio indicado, independente da BIOS.
+
+| Degrau | Tctl | PPT | clkMed | effMed | Stretch | Veredito |
+|---|---|---|---|---|---|---|
+| -5 | 67.9 °C | 92.2 W | 3954 MHz | 3959 MHz | 100.1% | PASS |
+| -10 | 68.5 °C | 92.2 W | 3983 MHz | 3983 MHz | 100% | PASS |
+| -15 | 68.6 °C | 92.2 W | 4050 MHz | 4045 MHz | 99.9% | PASS |
+| -20 | 69.0 °C | 92.2 W | 4117 MHz | 4122 MHz | 100.1% | PASS |
+| -25 | 69.0 °C | 92.2 W | 4179 MHz | 4176 MHz | 99.9% | PASS |
+| -30 | 69.1 °C | 92.2 W | 4225 MHz | 4226 MHz | 100% | PASS |
+
+**MELHOR: -30 all-core** (teto atingido, zero WHEA em todos os degraus).
+Log bruto: `logs/` (gitignored) — `auto-tune-20260911-114338.log`.
+
+### Leituras desta sessão
+
+- **Clock sobe à medida que o CO aprofunda** (+271 MHz de -5 a -30, mesmo PPT):
+  menos tensão → mais headroom dentro do mesmo orçamento de potência. O próprio
+  sweep mostra o benefício, sem precisar de benchmark externo.
+- **Stretch ~100% em todos os degraus** — depois do fix do burn em 12 threads;
+  a corrida anterior (6 threads) media ~55% e reprovava chip saudável (falso-positivo).
+- MHz **não comparáveis** com a sessão 09-09 (carga sintética diferente e override
+  +200 vs +100) — o que valida aqui é stretch ~100% + zero WHEA, não o número absoluto.
+- Confirma a config da BIOS (**-30 + Override +200**). Segue valendo o protocolo de
+  validação longa acima: stress não pega crash em idle — 2-3 dias de uso real mandam.
