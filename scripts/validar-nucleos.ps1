@@ -4,12 +4,14 @@
 # Ex.: .\validar-nucleos.ps1 -Modo Completo -Nucleos "0,2,5"
 # Nao precisa de admin (CoreCycler roda como usuario normal).
 # O config.ini original do CoreCycler e restaurado ao final (sempre).
+# Textos visiveis via scripts/lib/Idioma.ps1 (default EN).
 param(
   [string]$Modo = "",
   [string]$Nucleos = "all"
 )
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $PSCommandPath
+. (Join-Path $ScriptDir "lib\Idioma.ps1")
 $root = Split-Path -Parent $ScriptDir
 $toolsDir = Join-Path $root "tools"
 $logsDir = Join-Path $root "logs"
@@ -64,17 +66,17 @@ function Set-IniValor {
 # --- Pre-flight ---
 $ccDir = Find-CoreCyclerDir
 if ($ccDir -eq $null) {
-  Write-Host "ERRO: CoreCycler nao encontrado em tools\. Rode a opcao 1 do menu primeiro (ela baixa e extrai tudo)."
+  Write-Host (Get-Texto "v_cc_falta")
   exit 2
 }
 $p95exe = Join-Path $ccDir "test_programs\p95\prime95.exe"
 if (-not (Test-Path -LiteralPath $p95exe)) {
-  Write-Host "ERRO: Prime95 nao extraido em test_programs\p95\. Rode a opcao 1 do menu primeiro (ela baixa o Prime95)."
+  Write-Host (Get-Texto "v_p95_falta")
   exit 2
 }
 $configIni = Join-Path $ccDir "config.ini"
 if (-not (Test-Path -LiteralPath $configIni)) {
-  Write-Host "ERRO: config.ini do CoreCycler nao encontrado. Rode a opcao 1 do menu primeiro."
+  Write-Host (Get-Texto "v_cfg_falta")
   exit 2
 }
 
@@ -82,12 +84,13 @@ $nFisicos = Get-NumNucleos
 
 # --- Modo (pergunta se nao veio valido) ---
 if ($Modo -ne "Rapido" -and $Modo -ne "Completo") {
-  Write-Host "Modo Rapido: Prime95 SSE Small, ~4-6 min por nucleo (1 passada; bom para triagem)."
-  Write-Host "Modo Completo: Prime95 SSE All, ~40-65 min por nucleo (leva horas; validacao final)."
-  $m = Read-Host "Escolha o modo [Rapido/Completo] (Enter = Rapido)"
-  if ($m -eq "Completo" -or $m -eq "completo" -or $m -eq "C" -or $m -eq "c") { $Modo = "Completo" }
+  Write-Host (Get-Texto "v_modo_rapido")
+  Write-Host (Get-Texto "v_modo_completo")
+  $m = Read-Host (Get-Texto "v_modo_prompt")
+  if (($m -eq "Completo") -or ($m -eq "completo") -or ($m -eq "C") -or ($m -eq "c") -or ($m -eq "Full") -or ($m -eq "full") -or ($m -eq "F") -or ($m -eq "f")) { $Modo = "Completo" }
   else { $Modo = "Rapido" }
 }
+if ($Modo -eq "Rapido") { $ModoTxt = (Get-Texto "v_nome_rapido") } else { $ModoTxt = (Get-Texto "v_nome_completo") }
 
 # --- Nucleos-alvo ---
 $alvos = @()
@@ -100,7 +103,7 @@ if ([string]::IsNullOrWhiteSpace($Nucleos) -or $Nucleos -eq "all") {
   }
 }
 if ($alvos.Count -eq 0) {
-  Write-Host "ERRO: nenhum nucleo valido em -Nucleos (use csv como '0,1,2' ou 'all')."
+  Write-Host (Get-Texto "v_nucleo_erro")
   exit 1
 }
 
@@ -108,20 +111,20 @@ if ($Modo -eq "Rapido") {
   $fft = "Small"
   $runtime = "6m"
   $timeoutSeg = ($alvos.Count * 8 * 60) + 600
-  $estimativa = ("~{0} min no total ({1} nucleo(s) x ~4-6 min)" -f ($alvos.Count * 6), $alvos.Count)
+  $estimativa = (Get-Texto "v_est_rapido" ($alvos.Count * 6) $alvos.Count)
 } else {
   $fft = "All"
   $runtime = "auto"
   $timeoutSeg = ($alvos.Count * 75 * 60) + 1800
-  $estimativa = ("~{0} min a ~{1} min no total ({2} nucleo(s) x ~40-65 min; deixe rodando)" -f ($alvos.Count * 40), ($alvos.Count * 65), $alvos.Count)
+  $estimativa = (Get-Texto "v_est_completo" ($alvos.Count * 40) ($alvos.Count * 65) $alvos.Count)
 }
 
-# --- Confirmacao S/N ---
-Write-Host ("Vai validar {0} nucleo(s) [{1}] no modo {2} (Prime95 SSE {3})." -f $alvos.Count, ($alvos -join ","), $Modo, $fft)
-Write-Host ("Duracao estimada: {0}." -f $estimativa)
-$conf = Read-Host "Confirmar? (S/N)"
-if ($conf -ne "S" -and $conf -ne "s") {
-  Write-Host "Cancelado: nada foi executado."
+# --- Confirmacao S/N (aceita S/s em PT e S/s/Y/y em EN) ---
+Write-Host (Get-Texto "v_confirma_linha" $alvos.Count ($alvos -join ",") $ModoTxt $fft)
+Write-Host (Get-Texto "v_duracao" $estimativa)
+$conf = Read-Host (Get-Texto "g_confirma")
+if (($conf -ne "S") -and ($conf -ne "s") -and ($conf -ne "Y") -and ($conf -ne "y")) {
+  Write-Host (Get-Texto "v_cancelado")
   exit 0
 }
 
@@ -144,24 +147,24 @@ try {
   $linhas = Set-IniValor -Linhas $linhas -Secao "Prime95" -Chave "mode" -Valor "SSE"
   $linhas = Set-IniValor -Linhas $linhas -Secao "Prime95" -Chave "FFTSize" -Valor $fft
   $linhas | Set-Content -LiteralPath $configIni -Encoding UTF8
-  Write-Host ("[config] CoreCycler configurado: PRIME95/SSE {0}, runtime {1} (backup em .bak-validar-nucleos)." -f $fft, $runtime)
+  Write-Host (Get-Texto "v_config" $fft $runtime)
 
   # --- Roda o launcher e aguarda com poll ---
   $launcher = Join-Path $ccDir "script-corecycler.ps1"
-  Write-Host "[iniciando] CoreCycler... (feche a janela dele com CTRL+C se precisar interromper)"
+  Write-Host (Get-Texto "v_iniciando")
   $proc = Start-Process -FilePath "powershell.exe" -ArgumentList ("-ExecutionPolicy Bypass -NoProfile -File `"{0}`"" -f $launcher) -WorkingDirectory $ccDir -PassThru
   $limite = (Get-Date).AddSeconds($timeoutSeg)
   while (-not $proc.HasExited) {
     Start-Sleep -Seconds 30
     if ((Get-Date) -gt $limite) {
-      Write-Warning "Tempo limite atingido. Encerrando o CoreCycler e analisando o log parcial..."
+      Write-Warning (Get-Texto "v_timeout")
       try { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue } catch {}
       break
     }
     $faltaMin = [math]::Max(0, [int](New-TimeSpan -Start (Get-Date) -End $limite).TotalMinutes)
-    Write-Host ("[aguardando] CoreCycler rodando... (limite em ~{0} min)" -f $faltaMin)
+    Write-Host (Get-Texto "v_aguardando" $faltaMin)
   }
-  Write-Host ("[fim] CoreCycler encerrou (exit={0}). Analisando o log..." -f $proc.ExitCode)
+  Write-Host (Get-Texto "v_fim" $proc.ExitCode)
 
   # --- Parseia o log mais novo: ultimo "Set to Core X" antes do erro = culpado ---
   $ccLogs = Join-Path $ccDir "logs"
@@ -182,28 +185,28 @@ try {
 
   # --- Relatorio ---
   $relatorio = @()
-  $relatorio += ("=== validar-nucleos {0} modo={1} FFT={2} runtime={3} nucleos={4} ===" -f $ts, $Modo, $fft, $runtime, ($alvos -join ","))
-  if ($logCc -ne $null) { $relatorio += ("log CoreCycler: {0}" -f $logCc.FullName) }
+  $relatorio += (Get-Texto "v_rel_cab" $ts $ModoTxt $fft $runtime ($alvos -join ","))
+  if ($logCc -ne $null) { $relatorio += (Get-Texto "v_rel_log" $logCc.FullName) }
   $ordem = @($testados | Sort-Object)
   if ($ordem.Count -eq 0) {
-    $relatorio += "AVISO: nenhum 'Set to Core' encontrado no log; listando os alvos sem veredito de teste."
+    $relatorio += (Get-Texto "v_rel_aviso")
     $ordem = $alvos | Sort-Object
   }
   foreach ($c in $ordem) {
-    if ($falhas.ContainsKey($c)) { $relatorio += ("NUCLEO {0}: FAIL" -f $c) }
-    else { $relatorio += ("NUCLEO {0}: PASS" -f $c) }
+    if ($falhas.ContainsKey($c)) { $relatorio += (Get-Texto "v_nucleo_fail" $c) }
+    else { $relatorio += (Get-Texto "v_nucleo_pass" $c) }
   }
   $ruins = @($falhas.Keys | Sort-Object)
   if ($ruins.Count -gt 0) {
-    $relatorio += ("Sugestao: recuar 5 pontos no(s) nucleo(s) {0} via opcao 3 do menu." -f ($ruins -join ", "))
+    $relatorio += (Get-Texto "v_sugestao" ($ruins -join ", "))
   } else {
-    $relatorio += ("Nenhuma falha: offsets atuais passaram na validacao {0}." -f $Modo)
+    $relatorio += (Get-Texto "v_sem_falha" $ModoTxt)
   }
   foreach ($r in $relatorio) { Write-Host $r }
   $relatorio | Set-Content -LiteralPath $resumoLog -Encoding UTF8
-  Write-Host ("[resumo] $resumoLog")
+  Write-Host (Get-Texto "v_resumo" $resumoLog)
 } finally {
   Copy-Item -LiteralPath $backup -Destination $configIni -Force
   Remove-Item -LiteralPath $backup -Force -ErrorAction SilentlyContinue
-  Write-Host "[restaurado] config.ini original devolvido."
+  Write-Host (Get-Texto "v_restaurado")
 }

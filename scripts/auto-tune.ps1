@@ -4,7 +4,8 @@
 # PASS / MARGINAL (re-teste) / FAIL. Monotonicidade assumida: degrau mais fundo
 # que um FAIL nunca e tentado (se -20 falha, -30 nao e testado; so o refino).
 # Uso: .\auto-tune.ps1 [-Inicio 10] [-Passo 10] [-Maximo 30] [-Segundos 60] [-Refino 5]
-# No fim imprime MELHOR: -<N> all-core — grave esse valor na BIOS.
+# No fim imprime MELHOR/BEST: -<N> all-core — grave esse valor na BIOS.
+# Textos visiveis via scripts/lib/Idioma.ps1 (default EN).
 param(
   [int]$Inicio = 10,
   [int]$Passo = 10,
@@ -14,6 +15,7 @@ param(
 )
 $ErrorActionPreference = "Continue"
 $root = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot "lib\Idioma.ps1")
 $aplicar = Join-Path $PSScriptRoot "aplicar-offsets.ps1"
 $smu = Join-Path $root "tools\ryzen-smu-cli\ryzen-smu-cli.exe"
 $dll = Join-Path $root "tools\LibreHardwareMonitor\LibreHardwareMonitorLib.dll"
@@ -47,25 +49,25 @@ function Show-PainelDegrau {
   if ($script:UiPlana) {
     if ($EhRefino) {
       Write-Tela ""
-      Write-Tela ("--- refino -$Mag all-core ($Csv) ---")
+      Write-Tela (Get-Texto "a_painel_refino_cab" $Mag $Csv)
     } else {
       Write-Tela ""
-      Write-Tela ("--- degrau -$Mag all-core ($Csv) --- [" + $script:degrauIndice + "/" + $script:degrauTotal + "]")
+      Write-Tela (Get-Texto "a_painel_degrau_cab" $Mag $Csv $script:degrauIndice $script:degrauTotal)
     }
     return
   }
   Clear-Host
-  Write-Tela "=== Ajuste automatico all-core ==="
+  Write-Tela (Get-Texto "a_painel_titulo")
   if ($EhRefino) {
-    Write-Tela ("Refino | offset -$Mag all-core")
+    Write-Tela (Get-Texto "a_painel_refino_linha" $Mag)
   } else {
-    Write-Tela ("Degrau " + $script:degrauIndice + "/" + $script:degrauTotal + " | offset -$Mag all-core")
+    Write-Tela (Get-Texto "a_painel_degrau_linha" $script:degrauIndice $script:degrauTotal $Mag)
   }
-  Write-Tela ("Offset: $Csv")
+  Write-Tela (Get-Texto "a_painel_offset" $Csv)
   if ($script:melhorStretch -gt 0) {
-    Write-Tela ("MELHOR parcial: stretch " + [math]::Round($script:melhorStretch * 100,1) + "%")
+    Write-Tela (Get-Texto "a_painel_melhor" ([math]::Round($script:melhorStretch * 100,1)))
   } else {
-    Write-Tela "MELHOR parcial: nenhum ainda"
+    Write-Tela (Get-Texto "a_painel_melhor_nenhum")
   }
   Write-Tela ""
 }
@@ -119,7 +121,7 @@ if (-not $isAdmin) {
 }
 
 if (-not (Test-Path -LiteralPath $dll)) {
-  Write-Log "ERRO: LibreHardwareMonitorLib.dll nao encontrada em $dll. Rode scripts\1-baixar-ferramentas.ps1 primeiro."
+  Write-Log (Get-Texto "a_dll_erro" $dll)
   exit 1
 }
 Add-Type -Path $dll
@@ -193,12 +195,12 @@ function Test-DegrauMag {
     Show-PainelDegrau -Mag $Mag -Csv $csv
   }
   Write-Log ""
-  Write-Log ("--- degrau -$Mag all-core ($csv) ---")
+  Write-Log (Get-Texto "a_log_degrau" $Mag $csv)
   try {
     $ap = (& $aplicar -Offsets $csv 2>&1 | Out-String)
     Write-Log $ap
   } catch {
-    return @{ Veredito = "FAIL"; Motivo = ("erro ao aplicar offsets: {0}" -f $_.Exception.Message); Stretch = 0; Clk = 0; Marginal = $false }
+    return @{ Veredito = "FAIL"; Motivo = (Get-Texto "a_erro_aplicar" $_.Exception.Message); Stretch = 0; Clk = 0; Marginal = $false }
   }
 
   $t0 = Get-Date
@@ -207,7 +209,7 @@ function Test-DegrauMag {
   try {
     $jobs = Burn -seconds $Segundos -ThreadCount $Threads
   } catch {
-    $failMotivo = ("burn nao iniciou: {0}" -f $_.Exception.Message)
+    $failMotivo = (Get-Texto "a_burn_falha" $_.Exception.Message)
     $jobs = $null
   }
   if ([string]::IsNullOrEmpty($failMotivo)) {
@@ -223,7 +225,7 @@ function Test-DegrauMag {
       Show-BarraBurn -Elapsed $elapsed -Total $Segundos
       if ((-not $telMedida) -and ($elapsed -ge $pontoMedicao)) {
         Write-Tela ""
-        Show-SpinnerLinha -Texto "medindo sensores..." -Indice $spin
+        Show-SpinnerLinha -Texto (Get-Texto "a_medindo") -Indice $spin
         $tel = Read-Telemetria
         $telMedida = $true
         Write-Tela ""
@@ -234,7 +236,7 @@ function Test-DegrauMag {
       $spin++
     }
     if (-not $telMedida) {
-      Show-SpinnerLinha -Texto "medindo sensores..." -Indice $spin
+      Show-SpinnerLinha -Texto (Get-Texto "a_medindo") -Indice $spin
       $tel = Read-Telemetria
       $telMedida = $true
     }
@@ -243,10 +245,10 @@ function Test-DegrauMag {
     $still = @($jobs | Where-Object { $_.State -eq "Running" })
     if ($still.Count -gt 0) {
       Stop-Burn -Jobs $jobs
-      $failMotivo = "carga travou/estourou o tempo (crash ou instavel)"
+      $failMotivo = (Get-Texto "a_carga_travou")
     } else {
       $crashed = @($jobs | Where-Object { $_.State -eq "Failed" })
-      if ($crashed.Count -gt 0) { $failMotivo = "carga falhou (crash)" }
+      if ($crashed.Count -gt 0) { $failMotivo = (Get-Texto "a_carga_crash") }
     }
     Stop-Burn -Jobs $jobs
   }
@@ -255,29 +257,29 @@ function Test-DegrauMag {
     return @{ Veredito = "FAIL"; Motivo = $failMotivo; Stretch = 0; Clk = 0; Marginal = $false }
   }
   if ($null -eq $tel) {
-    return @{ Veredito = "FAIL"; Motivo = "sensores indisponiveis (sem leitura Tctl/clocks)"; Stretch = 0; Clk = 0; Marginal = $false }
+    return @{ Veredito = "FAIL"; Motivo = (Get-Texto "a_sensores"); Stretch = 0; Clk = 0; Marginal = $false }
   }
   $stretch = $tel.Eff / $tel.Clk
-  Write-Log ("Medido: Tctl={0}C | PPT={1}W | clkMed={2}MHz | effMed={3}MHz | stretch={4}%" -f [math]::Round($tel.Tctl,1), [math]::Round($tel.Ppt,1), [math]::Round($tel.Clk,0), [math]::Round($tel.Eff,0), [math]::Round($stretch * 100,1))
+  Write-Log (Get-Texto "a_medido" ([math]::Round($tel.Tctl,1)) ([math]::Round($tel.Ppt,1)) ([math]::Round($tel.Clk,0)) ([math]::Round($tel.Eff,0)) ([math]::Round($stretch * 100,1)))
   if ($tel.Tctl -gt 90) {
-    return @{ Veredito = "FAIL"; Motivo = ("Tctl {0}C acima de 90C" -f [math]::Round($tel.Tctl,1)); Stretch = $stretch; Clk = $tel.Clk; Marginal = $false }
+    return @{ Veredito = "FAIL"; Motivo = (Get-Texto "a_tctl" ([math]::Round($tel.Tctl,1))); Stretch = $stretch; Clk = $tel.Clk; Marginal = $false }
   }
   if ($stretch -lt 0.80) {
     # Piso absoluto: sob PPT-limit o chip saudavel fica ~88%; abaixo de 80%
     # e stretching claro (gate antigo de 97% reprovava chip saudavel).
-    return @{ Veredito = "FAIL"; Motivo = ("clock-stretching severo: effective {0}MHz = {1}% de {2}MHz (piso 80%)" -f [math]::Round($tel.Eff,0), [math]::Round($stretch * 100,1), [math]::Round($tel.Clk,0)); Stretch = $stretch; Clk = $tel.Clk; Marginal = $false }
+    return @{ Veredito = "FAIL"; Motivo = (Get-Texto "a_stretch_severo" ([math]::Round($tel.Eff,0)) ([math]::Round($stretch * 100,1)) ([math]::Round($tel.Clk,0))); Stretch = $stretch; Clk = $tel.Clk; Marginal = $false }
   }
   if (($script:melhorStretch -gt 0) -and ($stretch -lt ($script:melhorStretch - 0.08))) {
     # Degradacao relativa: caiu 8pp+ vs melhor degrau do sweep = CO agressivo demais.
-    return @{ Veredito = "FAIL"; Motivo = ("stretch degradou: {0}% vs melhor {1}% do sweep (queda 8pp+)" -f [math]::Round($stretch * 100,1), [math]::Round($script:melhorStretch * 100,1)); Stretch = $stretch; Clk = $tel.Clk; Marginal = $false }
+    return @{ Veredito = "FAIL"; Motivo = (Get-Texto "a_stretch_degrada" ([math]::Round($stretch * 100,1)) ([math]::Round($script:melhorStretch * 100,1))); Stretch = $stretch; Clk = $tel.Clk; Marginal = $false }
   }
   $novos = $null
-  Show-SpinnerLinha -Texto "checando WHEA..." -Indice 0
+  Show-SpinnerLinha -Texto (Get-Texto "a_whea") -Indice 0
   $novos = Get-WheaDesde -Desde $t0
   Write-Tela ""
   if ($novos.Count -gt 0) {
-    $novos | ForEach-Object { Write-Log ("WHEA: {0} id={1}" -f $_.TimeCreated, $_.Id) }
-    return @{ Veredito = "FAIL"; Motivo = ("{0} WHEA novo(s) durante o degrau" -f $novos.Count); Stretch = $stretch; Clk = $tel.Clk; Marginal = $false }
+    $novos | ForEach-Object { Write-Log (Get-Texto "a_whea_linha" $_.TimeCreated $_.Id) }
+    return @{ Veredito = "FAIL"; Motivo = (Get-Texto "a_whea_novos" $novos.Count); Stretch = $stretch; Clk = $tel.Clk; Marginal = $false }
   }
   if ($stretch -ge 0.95) {
     return @{ Veredito = "PASS"; Motivo = ""; Stretch = $stretch; Clk = $tel.Clk; Marginal = $false }
@@ -285,7 +287,7 @@ function Test-DegrauMag {
 
   # Faixa 80-95%: MARGINAL -> re-teste imediato (1 burn novo + 2 amostras,
   # mediana das 3 contando a primeira; mediana >= 95% = PASS, senao FAIL).
-  Write-Log ("Degrau -$($Mag): MARGINAL (stretch {0}%) - re-testando..." -f [math]::Round($stretch * 100,1))
+  Write-Log (Get-Texto "a_marginal" $Mag ([math]::Round($stretch * 100,1)))
   $tR = Get-Date
   $failR = ""
   $tel2 = $null
@@ -293,7 +295,7 @@ function Test-DegrauMag {
   try {
     $jobsR = Burn -seconds $Segundos -ThreadCount $Threads
   } catch {
-    $failR = ("re-teste: burn nao iniciou: {0}" -f $_.Exception.Message)
+    $failR = (Get-Texto "a_r_burn" $_.Exception.Message)
     $jobsR = $null
   }
   if ([string]::IsNullOrEmpty($failR)) {
@@ -312,14 +314,14 @@ function Test-DegrauMag {
       Show-BarraBurn -Elapsed $elapsedR -Total $Segundos
       if ((-not $fez2) -and ($elapsedR -ge $ponto2)) {
         Write-Tela ""
-        Show-SpinnerLinha -Texto "medindo sensores (re-teste 1/2)..." -Indice $spinR
+        Show-SpinnerLinha -Texto (Get-Texto "a_medindo_r1") -Indice $spinR
         $tel2 = Read-Telemetria
         $fez2 = $true
         Write-Tela ""
       }
       if ($fez2 -and (-not $fez3) -and ($elapsedR -ge $ponto3)) {
         Write-Tela ""
-        Show-SpinnerLinha -Texto "medindo sensores (re-teste 2/2)..." -Indice $spinR
+        Show-SpinnerLinha -Texto (Get-Texto "a_medindo_r2") -Indice $spinR
         $tel3 = Read-Telemetria
         $fez3 = $true
         Write-Tela ""
@@ -330,12 +332,12 @@ function Test-DegrauMag {
       $spinR++
     }
     if (-not $fez2) {
-      Show-SpinnerLinha -Texto "medindo sensores (re-teste 1/2)..." -Indice $spinR
+      Show-SpinnerLinha -Texto (Get-Texto "a_medindo_r1") -Indice $spinR
       $tel2 = Read-Telemetria
       $fez2 = $true
     }
     if (-not $fez3) {
-      Show-SpinnerLinha -Texto "medindo sensores (re-teste 2/2)..." -Indice ($spinR + 1)
+      Show-SpinnerLinha -Texto (Get-Texto "a_medindo_r2") -Indice ($spinR + 1)
       $tel3 = Read-Telemetria
       $fez3 = $true
     }
@@ -344,10 +346,10 @@ function Test-DegrauMag {
     $stillR = @($jobsR | Where-Object { $_.State -eq "Running" })
     if ($stillR.Count -gt 0) {
       Stop-Burn -Jobs $jobsR
-      $failR = "re-teste: carga travou/estourou o tempo (crash ou instavel)"
+      $failR = (Get-Texto "a_r_travou")
     } else {
       $crashedR = @($jobsR | Where-Object { $_.State -eq "Failed" })
-      if ($crashedR.Count -gt 0) { $failR = "re-teste: carga falhou (crash)" }
+      if ($crashedR.Count -gt 0) { $failR = (Get-Texto "a_r_crash") }
     }
     Stop-Burn -Jobs $jobsR
   }
@@ -355,56 +357,56 @@ function Test-DegrauMag {
     return @{ Veredito = "FAIL"; Motivo = $failR; Stretch = $stretch; Clk = $tel.Clk; Marginal = $true }
   }
   if (($null -eq $tel2) -or ($null -eq $tel3)) {
-    return @{ Veredito = "FAIL"; Motivo = "re-teste: sensores indisponiveis"; Stretch = $stretch; Clk = $tel.Clk; Marginal = $true }
+    return @{ Veredito = "FAIL"; Motivo = (Get-Texto "a_r_sensores"); Stretch = $stretch; Clk = $tel.Clk; Marginal = $true }
   }
   if (($tel2.Tctl -gt 90) -or ($tel3.Tctl -gt 90)) {
-    return @{ Veredito = "FAIL"; Motivo = "re-teste: Tctl acima de 90C"; Stretch = $stretch; Clk = $tel.Clk; Marginal = $true }
+    return @{ Veredito = "FAIL"; Motivo = (Get-Texto "a_r_tctl"); Stretch = $stretch; Clk = $tel.Clk; Marginal = $true }
   }
   $novosR = $null
-  Show-SpinnerLinha -Texto "checando WHEA (re-teste)..." -Indice 1
+  Show-SpinnerLinha -Texto (Get-Texto "a_whea_r") -Indice 1
   $novosR = Get-WheaDesde -Desde $tR
   Write-Tela ""
   if ($novosR.Count -gt 0) {
-    $novosR | ForEach-Object { Write-Log ("WHEA: {0} id={1}" -f $_.TimeCreated, $_.Id) }
-    return @{ Veredito = "FAIL"; Motivo = ("re-teste: {0} WHEA novo(s)" -f $novosR.Count); Stretch = $stretch; Clk = $tel.Clk; Marginal = $true }
+    $novosR | ForEach-Object { Write-Log (Get-Texto "a_whea_linha" $_.TimeCreated $_.Id) }
+    return @{ Veredito = "FAIL"; Motivo = (Get-Texto "a_r_whea" $novosR.Count); Stretch = $stretch; Clk = $tel.Clk; Marginal = $true }
   }
   $s1 = $stretch
   $s2 = $tel2.Eff / $tel2.Clk
   $s3 = $tel3.Eff / $tel3.Clk
   $ord = @($s1, $s2, $s3) | Sort-Object
   $med = $ord[1]
-  Write-Log ("RE-TESTE: mediana {0}% (amostras {1}%, {2}%, {3}%)" -f [math]::Round($med * 100,1), [math]::Round($s1 * 100,1), [math]::Round($s2 * 100,1), [math]::Round($s3 * 100,1))
+  Write-Log (Get-Texto "a_r_mediana" ([math]::Round($med * 100,1)) ([math]::Round($s1 * 100,1)) ([math]::Round($s2 * 100,1)) ([math]::Round($s3 * 100,1)))
   if ($med -ge 0.95) {
     return @{ Veredito = "PASS"; Motivo = ""; Stretch = $med; Clk = $tel.Clk; Marginal = $true }
   }
-  return @{ Veredito = "FAIL"; Motivo = ("re-teste: mediana {0}% abaixo de 95%" -f [math]::Round($med * 100,1)); Stretch = $med; Clk = $tel.Clk; Marginal = $true }
+  return @{ Veredito = "FAIL"; Motivo = (Get-Texto "a_r_mediana_fail" ([math]::Round($med * 100,1))); Stretch = $med; Clk = $tel.Clk; Marginal = $true }
 }
 
-Write-Log "=== Ajuste automatico all-core ==="
+Write-Log (Get-Texto "a_painel_titulo")
 try {
   $cpuNome = (Get-CimInstance Win32_Processor -ErrorAction Stop | Select-Object -First 1).Name
-  Write-Log ("CPU: {0}" -f $cpuNome)
+  Write-Log (Get-Texto "a_cpu" $cpuNome)
 } catch {
-  Write-Log "CPU: (nao identificado)"
+  Write-Log (Get-Texto "a_cpu_nao")
 }
 try {
   $offAtivos = (& $smu --get-offsets-terse 2>&1 | Out-String).Trim()
-  Write-Log ("Offsets ativos: {0}" -f $offAtivos)
+  Write-Log (Get-Texto "a_off" $offAtivos)
 } catch {
-  Write-Log "Offsets ativos: (leitura falhou)"
+  Write-Log (Get-Texto "a_off_fail")
 }
 try {
   $scalar = (& $smu --get-pbo-scalar 2>&1 | Out-String).Trim()
-  Write-Log ("Scalar: {0}" -f $scalar)
+  Write-Log (Get-Texto "a_scalar" $scalar)
 } catch {
-  Write-Log "Scalar: (flag --get-pbo-scalar nao suportada ou leitura falhou)"
+  Write-Log (Get-Texto "a_scalar_fail")
 }
-Write-Log ("Plano: passada grossa -$Inicio ate -$Maximo, passo $Passo, $N nucleos, carga ${Segundos}s por degrau + refino unico de +$Refino apos FAIL.")
-Write-Log "AVISO: o ajuste e temporario - some se reiniciar ou suspender."
-Write-Log "O teste vai aplicar -$Inicio, -$($Inicio + $Passo) ... ate -$Maximo ou ate falhar; se um degrau falhar, testa um refino (ultimo PASS + $Refino) e encerra."
-$conf = Read-Host "Confirmar o ajuste automatico? (S/N)"
-if (-not ($conf -eq "S" -or $conf -eq "s")) {
-  Write-Log "Cancelado: nada foi aplicado."
+Write-Log (Get-Texto "a_plano" $Inicio $Maximo $Passo $N $Segundos $Refino)
+Write-Log (Get-Texto "g_aviso_temp")
+Write-Log (Get-Texto "a_seq" $Inicio ($Inicio + $Passo) $Maximo $Refino)
+$conf = Read-Host (Get-Texto "a_confirma")
+if (-not (($conf -eq "S") -or ($conf -eq "s") -or ($conf -eq "Y") -or ($conf -eq "y"))) {
+  Write-Log (Get-Texto "g_cancel_nada")
   exit 0
 }
 
@@ -425,7 +427,7 @@ while ($mag -le $Maximo) {
   $r = Test-DegrauMag -Mag $mag
   if ($r.Marginal) { $marginais += $mag }
   if ($r.Veredito -eq "PASS") {
-    Write-Log ("Degrau -$mag all-core: PASS")
+    Write-Log (Get-Texto "a_degrau_pass" $mag)
     $melhor = $mag
     $script:melhorStretch = $r.Stretch
     $passes++
@@ -433,10 +435,10 @@ while ($mag -le $Maximo) {
     $ultimoClk = $r.Clk
     $mag += $Passo
   } else {
-    Write-Log ("Degrau -$mag all-core: FAIL ($($r.Motivo))")
+    Write-Log (Get-Texto "a_degrau_fail" $mag $r.Motivo)
     $failMag = $mag
     $failMotivoGrosso = $r.Motivo
-    $motivoParada = "FAIL em -$mag ($($r.Motivo))"
+    $motivoParada = (Get-Texto "a_falha_em" $mag $r.Motivo)
     break
   }
 }
@@ -446,45 +448,45 @@ if ($null -ne $failMag) {
   # Monotonicidade assumida: nada mais fundo que o FAIL e tentado depois disso.
   $refMag = $melhor + $Refino
   if (($refMag -gt $melhor) -and ($refMag -lt $failMag)) {
-    Write-Log ("Refino: testando -$refMag (ultimo PASS -$melhor + $Refino)...")
+    Write-Log (Get-Texto "a_refino_testando" $refMag $melhor $Refino)
     $rr = Test-DegrauMag -Mag $refMag -EhRefino
     if ($rr.Marginal -and ($marginais -notcontains $refMag)) { $marginais += $refMag }
     if ($rr.Veredito -eq "PASS") {
-      Write-Log ("Refino -$refMag all-core: PASS")
+      Write-Log (Get-Texto "a_refino_pass" $refMag)
       $melhor = $refMag
       $script:melhorStretch = $rr.Stretch
       $passes++
       if ($null -eq $primeiroClk) { $primeiroClk = $rr.Clk }
       $ultimoClk = $rr.Clk
-      $motivoParada = "$motivoParada; refino -$refMag PASS"
+      $motivoParada = "$motivoParada" + (Get-Texto "a_suf_refpass" $refMag)
     } else {
-      Write-Log ("Refino -$refMag all-core: FAIL ($($rr.Motivo))")
-      $motivoParada = "$motivoParada; refino -$refMag FAIL ($($rr.Motivo))"
+      Write-Log (Get-Texto "a_refino_fail" $refMag $rr.Motivo)
+      $motivoParada = "$motivoParada" + (Get-Texto "a_suf_reffail" $refMag $rr.Motivo)
     }
   } else {
-    Write-Log ("Refino: sem degrau valido entre -$melhor e -$failMag (pulando refino).")
+    Write-Log (Get-Texto "a_refino_skip" $melhor $failMag)
   }
 }
 
 Write-Log ""
-if ([string]::IsNullOrEmpty($motivoParada)) { $motivoParada = "teto -$Maximo atingido, todos os degraus PASS" }
-Write-Log ("Parada: {0}" -f $motivoParada)
+if ([string]::IsNullOrEmpty($motivoParada)) { $motivoParada = (Get-Texto "a_parada_teto" $Maximo) }
+Write-Log (Get-Texto "a_parada" $motivoParada)
 if ($melhor -gt 0) {
-  Write-Log ("MELHOR: -$melhor all-core")
+  Write-Log (Get-Texto "a_melhor" $melhor)
 } else {
-  Write-Log ("MELHOR: -0 all-core (nenhum degrau passou; motivo: {0})" -f $motivoParada)
+  Write-Log (Get-Texto "a_melhor_nenhum" $motivoParada)
 }
 $ganho = 0
 if (($passes -ge 2) -and ($null -ne $primeiroClk) -and ($null -ne $ultimoClk)) {
   $ganho = [math]::Round($ultimoClk - $primeiroClk, 0)
 }
-Write-Log ("GANHO: +$ganho MHz (clkMed ultimo PASS menos clkMed primeiro PASS)")
+Write-Log (Get-Texto "a_ganho" $ganho)
 if ($marginais.Count -gt 0) {
   $listaMarg = (($marginais | Sort-Object -Unique | ForEach-Object { "-$_" }) -join ", ")
-  Write-Log ("MARGINAIS: $listaMarg (passaram no re-teste ou falharam na mediana - candidatos a ajuste futuro por nucleo)")
+  Write-Log (Get-Texto "a_marginais" $listaMarg)
 } else {
-  Write-Log "MARGINAIS: nenhum"
+  Write-Log (Get-Texto "a_marginais_nenhum")
 }
-Write-Log "Grave o valor vencedor na BIOS: Advanced > AMD Overclocking > PBO > Curve Optimizer."
-Write-Log "Valide 2-3 dias de uso real (idle também) antes de gravar definitivo."
-Write-Log ("Log salvo em: {0}" -f $script:logFile)
+Write-Log (Get-Texto "a_bios")
+Write-Log (Get-Texto "a_valide")
+Write-Log (Get-Texto "a_log_em" $script:logFile)

@@ -17,3 +17,6 @@ opencode.jsonc
 .opencode/spec_atual.md
 .opencode/out/
 .opencode/memory/*.local.md
+
+# Preferencia local de idioma do menu (padrao EN)
+scripts/lang.txt

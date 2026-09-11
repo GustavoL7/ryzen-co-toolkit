@@ -46,12 +46,25 @@ PPT cravado em 92,2 W em todos os degraus. Zero WHEA.
 
 ## O que este kit faz
 
-1. **Baixa as ferramentas** necessárias (CoreCycler, ryzen-smu-cli, LibreHardwareMonitor) com hash verificado
-2. **Instala um dispatcher elevado** via Task Scheduler (`PBO-Runner`) — você confirma o UAC **uma vez** e depois todos os comandos rodam sem pedir elevation de novo
-3. **Lê o estado atual** do CPU (offsets CO ativos, scalar, sensores: temp, potência, SVI2, clocks)
-4. **Aplica offsets CO por núcleo** via linha de comando (sobrepõe a BIOS até reboot)
-5. **Roda teste A/B**: mesma carga sintética com offset X vs Y, telemetria durante a carga + checagem de WHEA
-6. Ao final, você **grava a configuração vencedora na BIOS** (persistente)
+Tudo roda de um menu interativo (inglês por padrão, opção `8` troca para português):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\menu.ps1
+```
+
+| Opção | O que faz |
+|---|---|
+| 1 - Instalar | Baixa as ferramentas (hash verificado) + registra a tarefa elevada (UAC 1x) |
+| 2 - Ver estado | Offsets CO ativos + temperatura/potência/clocks |
+| 3 - Aplicar offsets | Offsets manuais por núcleo (com confirmação) |
+| 4 - Teste A/B | Mesma carga, offset X vs Y, telemetria + checagem WHEA |
+| 5 - Checar WHEA | Histórico de erros de hardware |
+| 6 - Ajuste automático ⭐ | Varredura automática (-10/-20/-30, re-testa degraus marginais, refina) com veredito + melhor offset |
+| 7 - Afinar por núcleo | Validação CoreCycler por núcleo (para CPUs que falharam na opção 6) |
+| 8 - Idioma | English ↔ Português |
+| 0 - Sair | |
+
+Ao final, você **grava a configuração vencedora na BIOS** (offsets via CLI são voláteis — reboot restaura a BIOS).
 
 ## Compatibilidade
 
@@ -100,25 +113,16 @@ score + WHEA + dias de uso.
 git clone <repo-url>
 cd ryzen-co-toolkit
 
-# 2. Baixa as ferramentas (não precisa de admin)
-powershell -ExecutionPolicy Bypass -File scripts\1-baixar-ferramentas.ps1
+# 2. Abra o menu e siga as opções 1 → 2 → 6
+powershell -ExecutionPolicy Bypass -File scripts\menu.ps1
 
-# 3. Instala o dispatcher (UAC 1x)
-powershell -ExecutionPolicy Bypass -File scripts\2-instalar-dispatcher.ps1
-
-# 4. Estado atual do CPU
-powershell -ExecutionPolicy Bypass -File scripts\ler-offsets.ps1
-powershell -ExecutionPolicy Bypass -File scripts\ler-sensores.ps1
-
-# 5. Teste A/B: offset atual vs -25 all-core, 2 min de carga por fase
-powershell -ExecutionPolicy Bypass -File scripts\teste-ab.ps1 -OffsetB "-25,-25,-25,-25,-25,-25"
-
-# 5b. Aplica um conjunto de offsets direto + checa historico de WHEA
-powershell -ExecutionPolicy Bypass -File scripts\aplicar-offsets.ps1 -Offsets "-30,-30,-30,-30,-30,-30"
-powershell -ExecutionPolicy Bypass -File scripts\checar-whea.ps1 -Minutos 120
-
-# 6. Apos os testes, GRAVE o melhor offset na BIOS (o CLI e volatil!)
+# 3. Apos os testes, GRAVE o melhor offset na BIOS (o CLI e volatil!)
 ```
+
+Prefere rodar os scripts direto? Cada opção do menu corresponde 1:1 a um script em
+`scripts/` (ver tabela acima). Fluxo manual: `1-baixar-ferramentas.ps1` →
+`2-instalar-dispatcher.ps1` → `ler-offsets.ps1` / `ler-sensores.ps1` →
+`auto-tune.ps1` (ou `teste-ab.ps1 -OffsetB "-25,-25,-25,-25,-25,-25"`).
 
 ## Como funciona o dispatcher (por que UAC 1x)
 
@@ -149,7 +153,7 @@ Se travar/rebootar no meio de um teste, é só reiniciar: os offsets voltam pros
 ├── opencode.json    configuracao do pipeline de agentes
 ├── .opencode/       specs do pipeline e memoria
 ├── docs/            guia-completo.md, caso-real.md, fontes.md
-├── scripts/         baixar-ferramentas, instalar-dispatcher, sensores, offsets, aplicar-offsets, teste A/B, WHEA (checar-whea)
+├── scripts/         menu, ajuste-automatico, validacao-por-nucleo, baixar-ferramentas, instalar-dispatcher, sensores, offsets, teste A/B, WHEA, lib/ (elevacao, idioma)
 ├── tools/           (gitignored) binarios baixados pelo script 1
 └── logs/            (gitignored) saidas de teste
 ```

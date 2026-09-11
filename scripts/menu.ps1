@@ -1,7 +1,8 @@
-# Menu principal do ryzen-co-toolkit (PT-BR simples)
-# Uso: .\menu.ps1   (sem params; rode 1 vez e siga as opcoes 1 a 7)
+# Menu principal do ryzen-co-toolkit (textos via scripts/lib/Idioma.ps1, default EN)
+# Uso: .\menu.ps1   (sem params; rode 1 vez e siga as opcoes 1 a 8)
 $ErrorActionPreference = "Continue"
 $ScriptDir = Split-Path -Parent $PSCommandPath
+. (Join-Path $ScriptDir "lib\Idioma.ps1")
 $root = Split-Path -Parent $ScriptDir
 $toolsDir = Join-Path $root "tools"
 
@@ -13,13 +14,13 @@ function Test-Admin {
 
 function Show-PreFlight {
   if (-not (Test-Admin)) {
-    Write-Host "AVISO: voce NAO esta como administrador."
-    Write-Host "Algumas opcoes vao pedir permissao (UAC) na hora. Isso e normal."
+    Write-Host (Get-Texto "m_admin1")
+    Write-Host (Get-Texto "m_admin2")
     Write-Host ""
   }
   if (-not (Test-Path -LiteralPath $toolsDir)) {
-    Write-Host "AVISO: pasta tools\ nao encontrada."
-    Write-Host "Rode a opcao 1 primeiro (baixa e instala tudo)."
+    Write-Host (Get-Texto "m_tools1")
+    Write-Host (Get-Texto "m_tools2")
     Write-Host ""
   }
 }
@@ -28,21 +29,22 @@ Show-PreFlight
 
 do {
   try { if (-not [Console]::IsOutputRedirected) { Clear-Host } } catch {}
-  Write-Host "=== Ryzen CO Toolkit - Menu ==="
-  Write-Host "1 - Instalar (baixar ferramentas + registrar tarefa elevada)"
-  Write-Host "2 - Ver estado atual (offsets + temperatura/consumo)"
-  Write-Host "3 - Aplicar ajuste de voltagem por nucleo"
-  Write-Host "4 - Testar comparando antes/depois (teste A/B)"
-  Write-Host "5 - Checar erros de hardware (WHEA)"
-  Write-Host "6 - Ajuste automatico (recomendado para iniciantes)"
-  Write-Host "7 - Afinar por nucleo (se a opcao 6 falhou em algum degrau)"
-  Write-Host "0 - Sair"
+  Write-Host (Get-Texto "m_titulo")
+  Write-Host (Get-Texto "m_op1")
+  Write-Host (Get-Texto "m_op2")
+  Write-Host (Get-Texto "m_op3")
+  Write-Host (Get-Texto "m_op4")
+  Write-Host (Get-Texto "m_op5")
+  Write-Host (Get-Texto "m_op6")
+  Write-Host (Get-Texto "m_op7")
+  Write-Host (Get-Texto "m_op8")
+  Write-Host (Get-Texto "m_op0")
   Write-Host ""
-  $opcao = Read-Host "Escolha [0-7]"
+  $opcao = Read-Host (Get-Texto "m_prompt")
 
   if ($opcao -eq "1") {
     if (-not (Test-Path -LiteralPath $toolsDir)) {
-      Write-Host "Baixando ferramentas das fontes oficiais..."
+      Write-Host (Get-Texto "m_baixando")
     }
     & (Join-Path $ScriptDir "1-baixar-ferramentas.ps1")
     & (Join-Path $ScriptDir "2-instalar-dispatcher.ps1")
@@ -53,42 +55,42 @@ do {
     & (Join-Path $ScriptDir "ler-sensores.ps1")
   }
   elseif ($opcao -eq "3") {
-    Write-Host "Ajuste de voltagem por nucleo: valores negativos usam menos"
-    Write-Host "voltagem (ex.: -25,-25,-25,-25,-25,-25 para 6 nucleos)."
-    $csv = Read-Host "Digite os valores separados por virgula"
+    Write-Host (Get-Texto "m_opt3_l1")
+    Write-Host (Get-Texto "m_opt3_l2")
+    $csv = Read-Host (Get-Texto "m_opt3_prompt")
     if ([string]::IsNullOrWhiteSpace($csv)) {
-      Write-Host "Cancelado: nenhum valor digitado."
+      Write-Host (Get-Texto "m_opt3_vazio")
     }
     else {
-      Write-Host "AVISO: o ajuste e temporario - some se reiniciar ou suspender."
-      $conf = Read-Host "Confirmar? (S/N)"
-      if ($conf -eq "S" -or $conf -eq "s") {
+      Write-Host (Get-Texto "g_aviso_temp")
+      $conf = Read-Host (Get-Texto "g_confirma")
+      if (($conf -eq "S") -or ($conf -eq "s") -or ($conf -eq "Y") -or ($conf -eq "y")) {
         & (Join-Path $ScriptDir "aplicar-offsets.ps1") -Offsets $csv
       }
       else {
-        Write-Host "Cancelado: nada foi aplicado."
+        Write-Host (Get-Texto "g_cancel_nada")
       }
     }
   }
   elseif ($opcao -eq "4") {
-    Write-Host "O teste compara o PC antes e depois do ajuste, com carga pesada."
-    $offB = Read-Host "Digite o ajuste a testar (Enter = -25,-25,-25,-25,-25,-25)"
+    Write-Host (Get-Texto "m_opt4_l1")
+    $offB = Read-Host (Get-Texto "m_opt4_prompt_off")
     if ([string]::IsNullOrWhiteSpace($offB)) {
       $offB = "-25,-25,-25,-25,-25,-25"
     }
-    $segIn = Read-Host "Duracao de cada fase em segundos (Enter = 120)"
+    $segIn = Read-Host (Get-Texto "m_opt4_prompt_seg")
     $segundos = 120
     if (-not [string]::IsNullOrWhiteSpace($segIn)) {
       $segundos = [int]$segIn
     }
-    Write-Host ("Vai testar o ajuste {0} por {1} segundos por fase." -f $offB, $segundos)
-    Write-Host "AVISO: no fim o ajuste testado fica aplicado (temporario - some ao reiniciar)."
-    $conf = Read-Host "Confirmar? (S/N)"
-    if ($conf -eq "S" -or $conf -eq "s") {
+    Write-Host (Get-Texto "m_opt4_plano" $offB $segundos)
+    Write-Host (Get-Texto "m_opt4_aviso")
+    $conf = Read-Host (Get-Texto "g_confirma")
+    if (($conf -eq "S") -or ($conf -eq "s") -or ($conf -eq "Y") -or ($conf -eq "y")) {
       & (Join-Path $ScriptDir "teste-ab.ps1") -OffsetB $offB -Segundos $segundos
     }
     else {
-      Write-Host "Cancelado: nenhum teste foi rodado."
+      Write-Host (Get-Texto "m_cancel_teste")
     }
   }
   elseif ($opcao -eq "5") {
@@ -98,22 +100,32 @@ do {
     & (Join-Path $ScriptDir "auto-tune.ps1")
   }
   elseif ($opcao -eq "7") {
-    Write-Host "Valida cada nucleo separado com CoreCycler + Prime95."
-    $m = Read-Host "Modo: Rapido (R) ou Completo (C)? (Enter = Rapido)"
+    Write-Host (Get-Texto "m_opt7_l1")
+    $m = Read-Host (Get-Texto "m_opt7_modo")
     $modo = "Rapido"
-    if ($m -eq "C" -or $m -eq "c" -or $m -eq "Completo" -or $m -eq "completo") {
+    if (($m -eq "C") -or ($m -eq "c") -or ($m -eq "Completo") -or ($m -eq "completo") -or ($m -eq "F") -or ($m -eq "f") -or ($m -eq "Full") -or ($m -eq "full")) {
       $modo = "Completo"
     }
-    $n = Read-Host "Nucleos (ex.: 0,1,2 ou Enter = todos)"
+    $n = Read-Host (Get-Texto "m_opt7_nucleos")
     if ([string]::IsNullOrWhiteSpace($n)) {
       $n = "all"
     }
     & (Join-Path $ScriptDir "validar-nucleos.ps1") -Modo $modo -Nucleos $n
   }
+  elseif ($opcao -eq "8") {
+    if ((Get-Idioma) -eq "pt") {
+      Set-Idioma -Codigo "en"
+      Write-Host (Get-Texto "m_lang_en")
+    }
+    else {
+      Set-Idioma -Codigo "pt"
+      Write-Host (Get-Texto "m_lang_pt")
+    }
+  }
   elseif ($opcao -eq "0") {
-    Write-Host "Ate logo!"
+    Write-Host (Get-Texto "m_ate_logo")
   }
   else {
-    Write-Host "Opcao invalida. Digite um numero de 0 a 7."
+    Write-Host (Get-Texto "m_invalida")
   }
 } until ($opcao -eq "0")

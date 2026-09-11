@@ -18,6 +18,7 @@ powershell -ExecutionPolicy Bypass -File scripts\menu.ps1
 ```
 
 You will see a menu with options 1 to 5 plus 0. Follow them in this order.
+Option 8 switches the language of the menu and scripts (EN/PT) and saves the choice to scripts/lang.txt.
 
 ## Step 1 — Option 1: install everything
 
