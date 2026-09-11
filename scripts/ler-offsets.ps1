@@ -5,8 +5,8 @@ $smu = Join-Path $root "tools\ryzen-smu-cli\ryzen-smu-cli.exe"
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-  Write-Host "Pedindo elevacao (admin) - confirme o UAC..."
-  Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile","-ExecutionPolicy","Bypass","-File","`"$PSCommandPath`""
+  . (Join-Path $PSScriptRoot "lib\Elevacao.ps1")
+  Invoke-Elevado -ScriptPath $PSCommandPath
   exit
 }
 

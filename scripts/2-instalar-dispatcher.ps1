@@ -1,6 +1,9 @@
 # 2 - Registra a task agendada "PBO-Runner" (dispatcher elevado)
 # Voce confirma o UAC UMA vez; depois todos os scripts rodam sem novo UAC.
 # Requer: exec.ps1 na raiz do repo.
+# NOTA: sem ACL-stripping aqui — o fluxo exige escritor de cmd.txt e leitor de
+# logs/out.txt NAO-elevados (mesmo usuario interativo); a garantia e a
+# validacao de conteudo no exec.ps1 (allowlist + 1 linha + deny-chars + path confinado ao $root).
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $execPath = Join-Path $root "exec.ps1"
@@ -20,6 +23,14 @@ $s = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBat
 Register-ScheduledTask -TaskName "PBO-Runner" -Action $a -Principal $p -Settings $s -Force | Out-Null
 
 Write-Host "=== Task 'PBO-Runner' registrada com RunLevel Highest ==="
+
+$logsDir = Join-Path $root "logs"
+if (-not (Test-Path -LiteralPath $logsDir)) { New-Item -ItemType Directory -Path $logsDir -Force | Out-Null }
+$outFile = Join-Path $logsDir "out.txt"
+if (-not (Test-Path -LiteralPath $outFile)) { New-Item -ItemType File -Path $outFile -Force | Out-Null }
+$cmdPath = Join-Path $root "cmd.txt"
+$smuExe = Join-Path $root "tools\ryzen-smu-cli\ryzen-smu-cli.exe"
+Set-Content -Path $cmdPath -Value "`"$smuExe`" --get-offsets-terse" -Encoding ASCII
+
 Write-Host "Teste:"
-Set-Content -Path (Join-Path $root "cmd.txt") -Value "`& `"$execPath`"" -Encoding ASCII
 Write-Host "task registrada - rode: Start-ScheduledTask -TaskName PBO-Runner; depois veja logs\out.txt"

@@ -6,8 +6,10 @@
 > on **AMD Ryzen** CPUs — tested end-to-end on a real **Ryzen 5 5600** (Zen 3).
 > Goal: **same or better performance with less voltage, less heat, and zero extra watts**.
 
+> 📘 **New here? Start with the [Beginners Guide](docs/beginners-guide.md).**
+
 ⚠️ **Disclaimer**: touching CPU registers can cause freezes/reboots. Nothing here permanently
-alters hardware (CLI-applied CO offsets are **volatile** — reboot/sleep restores the BIOS
+alters hardware (CLI-applied CO offsets are **volatile** — reboot/suspend restores the BIOS
 values), but use at your own risk. We are not liable for instability or degradation.
 
 ---
@@ -17,10 +19,10 @@ values), but use at your own risk. We are not liable for instability or degradat
 | Config | CPU-Z Single | CPU-Z Multi | All-core clock | Vcore (SVI2) | Tctl | Power |
 |---|---|---|---|---|---|---|
 | Stock (reference) | 599 | 4674 | — | — | — | — |
-| Starting point (BIOS, CO -15) | 629 | 4675 | 4275-4350 MHz | 1.087 V | 65.9 °C | 92.2 W |
-| CO -20 (CLI) | — | — | 4288 MHz | 1.075 V | 65.8 °C | 92.2 W |
-| CO -25 (CLI) | — | — | 4342 MHz | 1.087 V | 65.9 °C | 92.2 W |
-| CO -30 (CLI, AGESA max) | 631 | 4845 | 4388-4425 MHz | 1.075 V | 65.0 °C | 92.2 W |
+| Starting point (BIOS, CO -15 + Boost Override +100) | 629 | 4675 | 4275-4350 MHz | 1.087 V | 65.9 °C | 92.2 W |
+| CO -20 (CLI + Boost Override +100) | — | — | 4288 MHz | 1.075 V | 65.8 °C | 92.2 W |
+| CO -25 (CLI + Boost Override +100) | — | — | 4342 MHz | 1.087 V | 65.9 °C | 92.2 W |
+| CO -30 (CLI, AGESA max + Boost Override +100) | 631 | 4845 | 4388-4425 MHz | 1.075 V | 65.0 °C | 92.2 W |
 | **FINAL: BIOS CO -30 + Boost Override +200** | **641** | **4843** | 4450 MHz | 1.104 V | 66.5 °C | 92.2 W |
 
 **+3.6% multi and +7.0% single vs stock (599/4674 → 641/4843) with the SAME power draw
@@ -98,6 +100,10 @@ powershell -ExecutionPolicy Bypass -File scripts\ler-sensores.ps1
 # 5. A/B test: current offset vs -25 all-core, 2 min load per phase
 powershell -ExecutionPolicy Bypass -File scripts\teste-ab.ps1 -OffsetB "-25,-25,-25,-25,-25,-25"
 
+# 5b. Apply a specific offset set directly + check WHEA history
+powershell -ExecutionPolicy Bypass -File scripts\aplicar-offsets.ps1 -Offsets "-30,-30,-30,-30,-30,-30"
+powershell -ExecutionPolicy Bypass -File scripts\checar-whea.ps1 -Minutos 120
+
 # 6. After testing, SAVE the best offset in the BIOS (the CLI is volatile!)
 ```
 
@@ -107,7 +113,7 @@ The tools (SMU, sensors) require **Administrator execution**. Instead of confirm
 every command, the kit registers a **scheduled task** (`PBO-Runner`) with `RunLevel Highest`:
 
 ```
-scripts\exec.ps1  ← reads the command from cmd.txt, executes elevated, writes output to logs\out.txt
+exec.ps1  ← reads the command from cmd.txt, executes elevated, writes output to logs\out.txt
 ```
 
 From then on, any kit script triggers it via `Start-ScheduledTask` **with no new UAC prompt**.
@@ -131,8 +137,11 @@ If the machine crashes/reboots mid-test, just restart: offsets go back to the BI
 
 ```
 ├── README.md (EN), README.pt-BR.md, LICENSE
+├── exec.ps1         elevated dispatcher entry point (runs via the PBO-Runner task)
+├── opencode.json    agent pipeline configuration
+├── .opencode/       pipeline specs and memory
 ├── docs/            guia-completo.md, caso-real.md, fontes.md (PT-BR, with dated sources)
-├── scripts/         tool downloader, dispatcher installer, sensors, offsets, A/B test, WHEA
+├── scripts/         tool downloader, dispatcher installer, sensors, offsets, aplicar-offsets, A/B test, WHEA (checar-whea)
 ├── tools/           (gitignored) binaries downloaded by script 1
 └── logs/            (gitignored) test outputs
 ```

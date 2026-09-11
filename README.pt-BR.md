@@ -7,6 +7,8 @@
 > compatibilidade com outras gerações abaixo).
 > Objetivo: **mesma ou mais performance com menos tensão, menos temperatura e nenhum watt extra**.
 
+> 📘 **Iniciante? Comece pelo [Guia para Iniciantes](docs/guia-iniciantes.md).**
+
 ⚠️ **Disclaimer**: mexer em registradores do CPU pode causar travamentos/reboots. Nada aqui altera
 hardware permanentemente (os offsets aplicados via CLI são **voláteis** — reboot/suspend restauram
 a BIOS), mas use por sua conta e risco. Não nos responsabilizamos por instabilidade ou degradação.
@@ -18,15 +20,15 @@ a BIOS), mas use por sua conta e risco. Não nos responsabilizamos por instabili
 | Config | CPU-Z Single | CPU-Z Multi | Clock all-core | Vcore (SVI2) | Temp Tctl | Potência |
 |---|---|---|---|---|---|---|
 | Stock (referência) | 599 | 4674 | — | — | — | — |
-| Ponto de partida (BIOS, CO -15) | 629 | 4675 | 4275-4350 MHz | 1.087 V | 65.9 °C | 92.2 W |
-| CO -20 (CLI) | — | — | 4288 MHz | 1.075 V | 65.8 °C | 92.2 W |
-| CO -25 (CLI) | — | — | 4342 MHz | 1.087 V | 65.9 °C | 92.2 W |
-| CO -30 (CLI, máx AGESA) | 631 | 4845 | 4388-4425 MHz | 1.075 V | 65.0 °C | 92.2 W |
+| Ponto de partida (BIOS, CO -15 + Boost Override +100) | 629 | 4675 | 4275-4350 MHz | 1.087 V | 65.9 °C | 92.2 W |
+| CO -20 (CLI + Boost Override +100) | — | — | 4288 MHz | 1.075 V | 65.8 °C | 92.2 W |
+| CO -25 (CLI + Boost Override +100) | — | — | 4342 MHz | 1.087 V | 65.9 °C | 92.2 W |
+| CO -30 (CLI, máx AGESA + Boost Override +100) | 631 | 4845 | 4388-4425 MHz | 1.075 V | 65.0 °C | 92.2 W |
 | **FINAL: BIOS CO -30 + Boost Override +200** | **641** | **4843** | 4450 MHz | 1.104 V | 66.5 °C | 92.2 W |
 
 **+3.6% multi e +7.0% single vs stock (599/4674 → 641/4843) com o MESMO consumo e
 temperatura.** Zero erros WHEA em todos os passos. Do ponto de partida CO -15 (629/4675):
-+3.6% MT, +1.9% ST. Detalhes completos em [`docs/caso-real.md`](docs/caso-real.md).
++3.6% MT, +1.9% ST. Detalhes completos em [`docs/caso-real.md`](docs/caso-real.md) (PT-BR).
 
 ---
 
@@ -83,10 +85,10 @@ score + WHEA + dias de uso.
 
 ```powershell
 # 1. Clone o repo
-git clone <url-do-repo>
+git clone <repo-url>
 cd ryzen-co-toolkit
 
-# 2. Baixa as ferramentas (nao precisa de admin)
+# 2. Baixa as ferramentas (não precisa de admin)
 powershell -ExecutionPolicy Bypass -File scripts\1-baixar-ferramentas.ps1
 
 # 3. Instala o dispatcher (UAC 1x)
@@ -99,6 +101,10 @@ powershell -ExecutionPolicy Bypass -File scripts\ler-sensores.ps1
 # 5. Teste A/B: offset atual vs -25 all-core, 2 min de carga por fase
 powershell -ExecutionPolicy Bypass -File scripts\teste-ab.ps1 -OffsetB "-25,-25,-25,-25,-25,-25"
 
+# 5b. Aplica um conjunto de offsets direto + checa historico de WHEA
+powershell -ExecutionPolicy Bypass -File scripts\aplicar-offsets.ps1 -Offsets "-30,-30,-30,-30,-30,-30"
+powershell -ExecutionPolicy Bypass -File scripts\checar-whea.ps1 -Minutos 120
+
 # 6. Apos os testes, GRAVE o melhor offset na BIOS (o CLI e volatil!)
 ```
 
@@ -108,7 +114,7 @@ As ferramentas (SMU, sensores) exigem **execução como Administrador**. Em vez 
 a cada comando, o kit registra uma **tarefa agendada** (`PBO-Runner`) com `RunLevel Highest`:
 
 ```
-scripts\exec.ps1  ← lê o comando de cmd.txt, executa elevado, grava saída em logs\out.txt
+exec.ps1  ← lê o comando de cmd.txt, executa elevado, grava saída em logs\out.txt
 ```
 
 Daí em diante, qualquer script do kit dispara via `Start-ScheduledTask` **sem novo UAC**.
@@ -127,8 +133,11 @@ Se travar/rebootar no meio de um teste, é só reiniciar: os offsets voltam pros
 
 ```
 ├── README.md (EN), README.pt-BR.md, LICENSE
+├── exec.ps1         ponto de entrada do dispatcher elevado (roda via tarefa PBO-Runner)
+├── opencode.json    configuracao do pipeline de agentes
+├── .opencode/       specs do pipeline e memoria
 ├── docs/            guia-completo.md, caso-real.md, fontes.md
-├── scripts/         baixar-ferramentas, instalar-dispatcher, sensores, offsets, teste A/B, WHEA
+├── scripts/         baixar-ferramentas, instalar-dispatcher, sensores, offsets, aplicar-offsets, teste A/B, WHEA (checar-whea)
 ├── tools/           (gitignored) binarios baixados pelo script 1
 └── logs/            (gitignored) saidas de teste
 ```

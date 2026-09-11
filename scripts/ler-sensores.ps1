@@ -9,11 +9,15 @@ $dll = Join-Path $root "tools\LibreHardwareMonitor\LibreHardwareMonitorLib.dll"
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-  Write-Host "Pedindo elevacao (admin) - confirme o UAC..."
-  Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile","-ExecutionPolicy","Bypass","-File","`"$PSCommandPath`"","-LoopSeconds",$LoopSeconds
+  . (Join-Path $PSScriptRoot "lib\Elevacao.ps1")
+  Invoke-Elevado -ScriptPath $PSCommandPath -Argumentos "-LoopSeconds $LoopSeconds"
   exit
 }
 
+if (-not (Test-Path -LiteralPath $dll)) {
+  Write-Host "ERRO: LibreHardwareMonitorLib.dll nao encontrada em $dll. Rode scripts\1-baixar-ferramentas.ps1 primeiro."
+  exit 1
+}
 Add-Type -Path $dll
 
 function Show-Cpu {
@@ -29,6 +33,16 @@ function Show-Cpu {
       $svi2 = ($hw.Sensors | Where-Object { $_.SensorType -eq "Voltage" -and $_.Name -eq "Core (SVI2 TFN)" }).Value
       $clk  = ($hw.Sensors | Where-Object { $_.SensorType -eq "Clock" -and $_.Name -eq "Cores (Average)" }).Value
       $eff  = ($hw.Sensors | Where-Object { $_.SensorType -eq "Clock" -and $_.Name -eq "Cores (Average Effective)" }).Value
+      if ($null -eq $temp -or $null -eq $pwr -or $null -eq $svi2 -or $null -eq $clk -or $null -eq $eff) {
+        Write-Host "ERRO: sensores indisponiveis (LibreHardwareMonitor nao retornou Tctl/PPT/SVI2/clocks). Rode como admin e confira o LibreHardwareMonitor."
+        $c.Close() | Out-Null
+        exit 1
+      }
+      if ($clk -eq 0) {
+        Write-Host "ERRO: clock medio = 0, impossivel calcular stretch (divisao por zero)."
+        $c.Close() | Out-Null
+        exit 1
+      }
       Write-Host ("Tctl={0}C | PPT={1}W | SVI2={2}V | clkMed={3}MHz | effMed={4}MHz | stretch={5}%" -f `
         [math]::Round($temp,1), [math]::Round($pwr,1), [math]::Round($svi2,3), `
         [math]::Round($clk,0), [math]::Round($eff,0), `

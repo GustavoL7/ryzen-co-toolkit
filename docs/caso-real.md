@@ -28,10 +28,10 @@ A BIOS já tinha PBO + Curve Optimizer **-15 all-core**. Medição CPU-Z: **629 
 | Config | Clock all-core (carga) | SVI2 | Tctl | PPT | CPU-Z ST | CPU-Z MT |
 |---|---|---|---|---|---|---|
 | Stock (referência) | — | — | — | — | 599 | 4674 |
-| BIOS: CO -15 (início) | 4275 MHz | 1.087 V | 65.9 °C | 92.2 W | 629 | 4675 |
-| CO -20 (CLI) | 4288 MHz | 1.075 V | 65.8 °C | 92.2 W | — | — |
-| CO -25 (CLI) | 4342 MHz | 1.087 V | 65.9 °C | 92.2 W | — | — |
-| CO -30 (CLI) | 4388 MHz | 1.075 V | 65.0 °C | 92.2 W | 631 | 4845 |
+| BIOS: CO -15 + Override +100 (início) | 4275 MHz | 1.087 V | 65.9 °C | 92.2 W | 629 | 4675 |
+| CO -20 (CLI) + Override +100 | 4288 MHz | 1.075 V | 65.8 °C | 92.2 W | — | — |
+| CO -25 (CLI) + Override +100 | 4342 MHz | 1.087 V | 65.9 °C | 92.2 W | — | — |
+| CO -30 (CLI) + Override +100 | 4388 MHz | 1.075 V | 65.0 °C | 92.2 W | 631 | 4845 |
 | **BIOS: CO -30 + Override +200** | 4450 MHz (amostra) | 1.104 V | 66.5 °C | 92.2 W | **641** | **4843** |
 
 Validações CPU-Z públicas (multi-thread):
