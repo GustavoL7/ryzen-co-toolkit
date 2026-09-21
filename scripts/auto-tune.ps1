@@ -3,14 +3,14 @@
 # Cada degrau aplica o offset, roda carga curta, mede 4 gates e da veredito
 # PASS / MARGINAL (re-teste) / FAIL. Monotonicidade assumida: degrau mais fundo
 # que um FAIL nunca e tentado (se -20 falha, -30 nao e testado; so o refino).
-# Uso: .\auto-tune.ps1 [-Inicio 10] [-Passo 10] [-Maximo 30] [-Segundos 60] [-Refino 5]
+# Uso: .\auto-tune.ps1 [-Inicio 10] [-Passo 10] [-Maximo 30] [-Segundos 180] [-Refino 5]
 # No fim imprime MELHOR/BEST: -<N> all-core — grave esse valor na BIOS.
 # Textos visiveis via scripts/lib/Idioma.ps1 (default EN).
 param(
   [int]$Inicio = 10,
   [int]$Passo = 10,
   [int]$Maximo = 30,
-  [int]$Segundos = 60,
+  [int]$Segundos = 180,
   [int]$Refino = 5
 )
 $ErrorActionPreference = "Continue"
@@ -489,4 +489,6 @@ if ($marginais.Count -gt 0) {
 }
 Write-Log (Get-Texto "a_bios")
 Write-Log (Get-Texto "a_valide")
+Write-Log (Get-Texto "g_triagem_l1")
+Write-Log (Get-Texto "g_triagem_l2")
 Write-Log (Get-Texto "a_log_em" $script:logFile)

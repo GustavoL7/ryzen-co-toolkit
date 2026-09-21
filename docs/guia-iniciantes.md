@@ -53,6 +53,8 @@ A opcao 8 alterna o idioma do menu e dos scripts (PT/EN) e salva a escolha em sc
 3. Zero WHEA + score melhor = pode avancar 5 pontos. WHEA ou score pior = recue.
 4. Para descobrir QUAL nucleo falha, use a opcao `7` do menu (CoreCycler + Prime95: Rapido ~4-6 min/nucleo; Completo leva horas; quem falhar, recue 5 pontos so nele via opcao 3).
 
+> O teste do kit e so uma triagem de minutos: passar aqui nao garante estabilidade em jogos ou uso leve (idle, FPS capado). Se crashar no uso real, recue 5 pontos (ex.: -30 para -25) — foi o que aconteceu em 20/09/2026, quando um CO -30 aprovado com zero WHEA crashou no Tarkov com framegen e deu BSOD 0x13A.
+
 ## Passo 6 — Opcao 0: sair e gravar na BIOS
 
 1. Escolha `0` para sair.

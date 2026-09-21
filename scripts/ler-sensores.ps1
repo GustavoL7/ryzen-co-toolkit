@@ -1,7 +1,8 @@
 # Le sensores de CPU via LibreHardwareMonitorLib (Tctl, PPT, SVI2, clocks, effective clocks)
 # Uso: .\ler-sensores.ps1 [-LoopSeconds 10]   (loop continuo ate Ctrl+C)
 param(
-  [int]$LoopSeconds = 0
+  [int]$LoopSeconds = 0,
+  [int]$Amostras = 0
 )
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
@@ -10,7 +11,7 @@ $dll = Join-Path $root "tools\LibreHardwareMonitor\LibreHardwareMonitorLib.dll"
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
   . (Join-Path $PSScriptRoot "lib\Elevacao.ps1")
-  Invoke-Elevado -ScriptPath $PSCommandPath -Argumentos "-LoopSeconds $LoopSeconds"
+  Invoke-Elevado -ScriptPath $PSCommandPath -Argumentos "-LoopSeconds $LoopSeconds -Amostras $Amostras"
   exit
 }
 
@@ -57,8 +58,11 @@ function Show-Cpu {
 }
 
 if ($LoopSeconds -gt 0) {
+  $n = 0
   while ($true) {
     Show-Cpu
+    $n++
+    if (($Amostras -gt 0) -and ($n -ge $Amostras)) { break }
     Start-Sleep -Seconds $LoopSeconds
   }
 } else {

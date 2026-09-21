@@ -57,8 +57,9 @@ try {
 
   $allowTerse  = '^(?:&\s*)?"?[^"\s]*ryzen-smu-cli(\.exe)?"?\s+--get-offsets-terse\s*$'
   $allowScalar = '^(?:&\s*)?"?[^"\s]*ryzen-smu-cli(\.exe)?"?\s+--get-pbo-scalar\s*$'
+  $allowPboLim = '^(?:&\s*)?"?[^"\s]*ryzen-smu-cli(\.exe)?"?\s+--get-pbo-limits\s*$'
   $allowOffset = '^(?:&\s*)?"?[^"\s]*ryzen-smu-cli(\.exe)?"?\s+--offset\s+-?\d+(,-?\d+){0,15}\s*$'
-  $allowPs1    = '^(?:&\s*)?"(?<ps1>[^"]*\\scripts\\(?:aplicar-offsets|ler-offsets|ler-sensores|teste-ab|checar-whea|1-baixar-ferramentas)\.ps1)"(?<args>(?:\s+-[A-Za-z]+\s+(?:"[^"]*"|[^\s"]+))*)\s*$'
+  $allowPs1    = '^(?:&\s*)?"(?<ps1>[^"]*\\scripts\\(?:aplicar-offsets|ler-offsets|ler-sensores|teste-ab|checar-whea|ler-pbo|1-baixar-ferramentas)\.ps1)"(?<args>(?:\s+-[A-Za-z]+\s+(?:"[^"]*"|[^\s"]+))*)\s*$'
 
   if ($cmd -match $allowTerse) {
     $exePath = $null
@@ -82,6 +83,17 @@ try {
       $exePath = $full
     }
     & $exePath --get-pbo-scalar *>&1 | Out-File $outFile -Append
+  } elseif ($cmd -match $allowPboLim) {
+    $exePath = $null
+    if ($cmd -match '"(?<p>[^"]+)"') { $exePath = $Matches.p } else { $exePath = ($cmd -replace '^&\s*', '').Split(' ')[0] }
+    if ($exePath -notmatch '[\\/]') { $exePath = Join-Path $root "tools\ryzen-smu-cli\ryzen-smu-cli.exe" }
+    else {
+      if (-not [IO.Path]::IsPathRooted($exePath)) { $exePath = Join-Path $root $exePath }
+      $full = [IO.Path]::GetFullPath($exePath)
+      if (-not $full.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase)) { Write-Blocked "caminho do executavel fora do kit (comando fora da allowlist)" }
+      $exePath = $full
+    }
+    & $exePath --get-pbo-limits *>&1 | Out-File $outFile -Append
   } elseif ($cmd -match $allowOffset) {
     $csv = $null
     [void]($cmd -match '--offset\s+(?<csv>-?\d+(?:,-?\d+){0,15})\s*$')
@@ -103,8 +115,12 @@ try {
     $full = [IO.Path]::GetFullPath($ps1)
     if (-not $full.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase)) { Write-Blocked "script fora do kit (comando fora da allowlist)" }
     if (-not (Test-Path -LiteralPath $full)) { Write-Blocked "script interno nao encontrado (comando fora da allowlist)" }
-    $argArr = Split-Args "$argStr"
-    & $full @argArr *>&1 | Out-File $outFile -Append
+    $hash = @{}
+    foreach ($m in [regex]::Matches("$argStr", '-(?<n>[A-Za-z]+)\s+(?:"(?<q>[^"]*)"|(?<t>[^\s"]+))')) {
+      if ($m.Groups['q'].Success) { $hash[$m.Groups['n'].Value] = $m.Groups['q'].Value }
+      else { $hash[$m.Groups['n'].Value] = $m.Groups['t'].Value }
+    }
+    & $full @hash *>&1 | Out-File $outFile -Append
   } else {
     Write-Blocked "comando fora da allowlist"
   }

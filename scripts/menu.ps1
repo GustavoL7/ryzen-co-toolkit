@@ -1,5 +1,5 @@
 # Menu principal do ryzen-co-toolkit (textos via scripts/lib/Idioma.ps1, default EN)
-# Uso: .\menu.ps1   (sem params; rode 1 vez e siga as opcoes 1 a 8)
+# Uso: .\menu.ps1   (sem params; rode 1 vez e siga as opcoes 0 a 9)
 $ErrorActionPreference = "Continue"
 $ScriptDir = Split-Path -Parent $PSCommandPath
 . (Join-Path $ScriptDir "lib\Idioma.ps1")
@@ -38,6 +38,7 @@ do {
   Write-Host (Get-Texto "m_op6")
   Write-Host (Get-Texto "m_op7")
   Write-Host (Get-Texto "m_op8")
+  Write-Host (Get-Texto "m_op9")
   Write-Host (Get-Texto "m_op0")
   Write-Host ""
   $opcao = Read-Host (Get-Texto "m_prompt")
@@ -53,6 +54,9 @@ do {
     & (Join-Path $ScriptDir "ler-offsets.ps1")
     Write-Host ""
     & (Join-Path $ScriptDir "ler-sensores.ps1")
+    Write-Host ""
+    & (Join-Path $ScriptDir "ler-pbo.ps1")
+    $null = Read-Host (Get-Texto "g_pausa")
   }
   elseif ($opcao -eq "3") {
     Write-Host (Get-Texto "m_opt3_l1")
@@ -79,7 +83,7 @@ do {
       $offB = "-25,-25,-25,-25,-25,-25"
     }
     $segIn = Read-Host (Get-Texto "m_opt4_prompt_seg")
-    $segundos = 120
+    $segundos = 180
     if (-not [string]::IsNullOrWhiteSpace($segIn)) {
       $segundos = [int]$segIn
     }
@@ -95,6 +99,7 @@ do {
   }
   elseif ($opcao -eq "5") {
     & (Join-Path $ScriptDir "checar-whea.ps1")
+    $null = Read-Host (Get-Texto "g_pausa")
   }
   elseif ($opcao -eq "6") {
     & (Join-Path $ScriptDir "auto-tune.ps1")
@@ -121,6 +126,18 @@ do {
       Set-Idioma -Codigo "pt"
       Write-Host (Get-Texto "m_lang_pt")
     }
+  }
+  elseif ($opcao -eq "9") {
+    & (Join-Path $ScriptDir "checar-os.ps1")
+    Write-Host ""
+    $resp9 = Read-Host (Get-Texto "m_op9_apply")
+    if (($resp9 -eq "S") -or ($resp9 -eq "s") -or ($resp9 -eq "Y") -or ($resp9 -eq "y")) {
+      & (Join-Path $ScriptDir "aplicar-os.ps1")
+    }
+    else {
+      Write-Host (Get-Texto "g_cancel_nada")
+    }
+    $null = Read-Host (Get-Texto "g_pausa")
   }
   elseif ($opcao -eq "0") {
     Write-Host (Get-Texto "m_ate_logo")

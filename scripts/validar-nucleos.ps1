@@ -202,6 +202,8 @@ try {
   } else {
     $relatorio += (Get-Texto "v_sem_falha" $ModoTxt)
   }
+  $relatorio += (Get-Texto "g_triagem_l1")
+  $relatorio += (Get-Texto "g_triagem_l2")
   foreach ($r in $relatorio) { Write-Host $r }
   $relatorio | Set-Content -LiteralPath $resumoLog -Encoding UTF8
   Write-Host (Get-Texto "v_resumo" $resumoLog)

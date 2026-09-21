@@ -53,6 +53,8 @@ Option 8 switches the language of the menu and scripts (EN/PT) and saves the cho
 3. Zero WHEA + better score = you may go 5 points further. WHEA or worse score = back off.
 4. To find out WHICH core fails, use menu option `7` (CoreCycler + Prime95: Quick ~4-6 min/core; Full takes hours; back off 5 points only on the failing core via option 3).
 
+> The kit test is only a minutes-long screening: passing here does not guarantee stability in games or light use (idle, FPS-capped). If it crashes in real use, back off 5 points (e.g. -30 to -25) — on 2026-09-20 a CO -30 that passed with zero WHEA crashed in Tarkov with framegen and then BSOD 0x13A.
+
 ## Step 6 — Option 0: exit and save to BIOS
 
 1. Choose `0` to exit.

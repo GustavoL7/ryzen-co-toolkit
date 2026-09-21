@@ -9,6 +9,8 @@
 
 > 📘 **Iniciante? Comece pelo [Guia para Iniciantes](docs/guia-iniciantes.md).**
 
+> 🧰 **Ferramentas extras sem conflito com o CO**: [ferramentas-extras.md](docs/ferramentas-extras.md).
+
 ⚠️ **Disclaimer**: mexer em registradores do CPU pode causar travamentos/reboots. Nada aqui altera
 hardware permanentemente (os offsets aplicados via CLI são **voláteis** — reboot/suspend restauram
 a BIOS), mas use por sua conta e risco. Não nos responsabilizamos por instabilidade ou degradação.
@@ -143,6 +145,11 @@ Se travar/rebootar no meio de um teste, é só reiniciar: os offsets voltam pros
 - O modo de falha clássico do CO agressivo é **crash em idle/carga leve** (não em stress) — valide 2-3 dias de uso real antes de considerar pronto
 - **Valide por SCORE, não só por "não crashou"**: CO agressivo demais causa clock-stretching silencioso (compare Effective Clock vs Requested Clock no LibreHardwareMonitor)
 - Erros **WHEA-Logger ID 18/19** no Event Viewer = offset agressivo demais; recue 5 pontos (ou +3 no núcleo culpado — o APIC ID do evento aponta qual)
+- **Teste do kit = triagem de minutos, não garantia de estabilidade**: instabilidade de CO aparece em
+  idle/jogo leve (ex.: FPS capado), não no stress all-core; regra prática — se falhar no uso real,
+  recue 5 pontos (ex.: -30 para -25). Caso real 20/09/2026: BIOS CO -30 + BO +200 passou em todos
+  os degraus com zero WHEA, depois crashou no Tarkov (pós-update + Lossless framegen) e em seguida
+  BSOD 0x13A KERNEL_MODE_HEAP_CORRUPTION.
 - Nunca tune CPU e RAM ao mesmo tempo
 
 ## Estrutura

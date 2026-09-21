@@ -8,6 +8,8 @@
 
 > 📘 **New here? Start with the [Beginners Guide](docs/beginners-guide.md).**
 
+> 🧰 **Extra tools that don't fight your CO**: [ferramentas-extras.md](docs/ferramentas-extras.md).
+
 ⚠️ **Disclaimer**: touching CPU registers can cause freezes/reboots. Nothing here permanently
 alters hardware (CLI-applied CO offsets are **volatile** — reboot/suspend restores the BIOS
 values), but use at your own risk. We are not liable for instability or degradation.
@@ -147,6 +149,11 @@ If the machine crashes/reboots mid-test, just restart: offsets go back to the BI
   clock-stretching (compare Effective Clock vs Requested Clock in LibreHardwareMonitor)
 - **WHEA-Logger ID 18/19** in Event Viewer = offset too aggressive; back off 5 points (or +3 on
   the failing core — the event's APIC ID tells you which)
+- **Kit test = minutes-long screening, not a stability guarantee**: CO instability shows up in
+  idle/light gaming (e.g. FPS-capped) rather than all-core stress; practical rule — if it fails
+  in real use, back off 5 points (e.g. -30 to -25). Real case 2026-09-20: BIOS CO -30 + BO +200
+  passed every step with zero WHEA, then crashed in Tarkov (post-update + Lossless framegen)
+  and later BSOD 0x13A KERNEL_MODE_HEAP_CORRUPTION.
 - Never tune CPU and RAM at the same time
 
 ## Structure

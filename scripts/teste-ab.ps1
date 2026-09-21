@@ -1,18 +1,19 @@
 # Teste A/B de offsets: mesma carga sintetica, telemetria durante a carga, checagem WHEA
 # Uso:
-#   .\teste-ab.ps1 -OffsetB "-25,-25,-25,-25,-25,-25" -Segundos 120 -Threads 12 -TimeoutSeg 180
+#   .\teste-ab.ps1 -OffsetB "-25,-25,-25,-25,-25,-25" -Segundos 180 -Threads 12 -TimeoutSeg 240
 #   -OffsetA vazio = baseline (NAO toca nos offsets na fase A)
 #   No fim, deixa o OffsetB aplicado (volatil - reboot restaura BIOS)
 param(
   [string]$OffsetA = "",
   [string]$OffsetB = "-25,-25,-25,-25,-25,-25",
-  [int]$Segundos = 120,
+  [int]$Segundos = 180,
   [int]$Threads = 12,
   [int]$TimeoutSeg = ($Segundos + 60)
 )
 $ErrorActionPreference = "Continue"
 if ($TimeoutSeg -le 0) { $TimeoutSeg = $Segundos + 60 }
 $root = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot "lib\Idioma.ps1")
 $smu = Join-Path $root "tools\ryzen-smu-cli\ryzen-smu-cli.exe"
 $dll = Join-Path $root "tools\LibreHardwareMonitor\LibreHardwareMonitorLib.dll"
 $logDir = Join-Path $root "logs"
@@ -138,5 +139,7 @@ Stop-Burn -Jobs $jobs
 Write-Log "--- WHEA ultima 30 min ---"
 Check-Whea 30
 Write-Log "=== fim $(Get-Date -Format 'HH:mm:ss') ==="
+Write-Log (Get-Texto "g_triagem_l1")
+Write-Log (Get-Texto "g_triagem_l2")
 Write-Log "AVISO: Offset B ($OffsetB) esta aplicado agora (volatil - reboot restaura BIOS). Rode o CPU-Z bench para validar o score!"
 Write-Log ("Log salvo em: {0}" -f $script:logFile)
