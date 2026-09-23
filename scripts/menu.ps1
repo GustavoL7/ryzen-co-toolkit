@@ -78,6 +78,7 @@ do {
   }
   elseif ($opcao -eq "4") {
     Write-Host (Get-Texto "m_opt4_l1")
+    Write-Host (Get-Texto "m_opt4_dica")
     $offB = Read-Host (Get-Texto "m_opt4_prompt_off")
     if ([string]::IsNullOrWhiteSpace($offB)) {
       $offB = "-25,-25,-25,-25,-25,-25"
@@ -87,11 +88,23 @@ do {
     if (-not [string]::IsNullOrWhiteSpace($segIn)) {
       $segundos = [int]$segIn
     }
+    $modoIn = Read-Host (Get-Texto "m_opt4_prompt_modo")
+    $modoCarga = "All"
+    if (-not [string]::IsNullOrWhiteSpace($modoIn)) {
+      $t = $modoIn.Trim()
+      if (($t -ieq "Single") -or ($t -ieq "S") -or ($t -ieq "1")) { $modoCarga = "Single" }
+      elseif (($t -ieq "Dual") -or ($t -ieq "D") -or ($t -ieq "2")) { $modoCarga = "Dual" }
+      elseif (($t -ieq "Half") -or ($t -ieq "H") -or ($t -ieq "M")) { $modoCarga = "Half" }
+      else { $modoCarga = "All" }
+    }
+    $grupoIn = Read-Host (Get-Texto "m_opt4_prompt_grupo")
+    $grupoCores = ""
+    if (-not [string]::IsNullOrWhiteSpace($grupoIn)) { $grupoCores = $grupoIn.Trim() }
     Write-Host (Get-Texto "m_opt4_plano" $offB $segundos)
     Write-Host (Get-Texto "m_opt4_aviso")
     $conf = Read-Host (Get-Texto "g_confirma")
     if (($conf -eq "S") -or ($conf -eq "s") -or ($conf -eq "Y") -or ($conf -eq "y")) {
-      & (Join-Path $ScriptDir "teste-ab.ps1") -OffsetB $offB -Segundos $segundos
+      & (Join-Path $ScriptDir "teste-ab.ps1") -OffsetB $offB -Segundos $segundos -ModoCarga $modoCarga -GrupoCores $grupoCores
     }
     else {
       Write-Host (Get-Texto "m_cancel_teste")

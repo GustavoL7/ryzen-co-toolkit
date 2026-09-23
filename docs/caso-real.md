@@ -159,3 +159,33 @@ medido em carga ≈ teto de 100 W (variância de telemetria).
 
 Retorno aprox. linear (~11-13 pts/W) em 92-100 W — sem dobra brusca nessa faixa; 95 W é o
 equilíbrio (‑1.1% score por ‑5% watts vs 100 W). Ponto 88 W opcional para achar a dobra real.
+
+---
+
+## Sessão gaming — sweep Single + mix por núcleo, 2026-09-23
+
+Motivo: depois de 3 dias estáveis em **-30 all-core + Override +200**, um update do Tarkov
+(rodando com Lossless Scaling) trouxe crash + BSOD `0x13A` (erro de anel do kernel, típico de
+CO agressivo em boost alto de poucos núcleos). Fallback imediato para **-25 all-core + Override
++100**, estável — e ponto de partida do retune fino desta sessão.
+
+PBO atual (owner-reported, **a confirmar via Ryzen Master**): **PPT 80 W / TDC 75 A / EDC 80 A
++ Override +100**. BIOS anterior documentada era +200 e 100/70/100 — não comparar MHz com as
+sessões antigas; o que valida aqui é PASS + zero WHEA.
+
+Ferramenta nova do kit (ciclos 8-10): `teste-ab.ps1 -ModoCarga Single|Dual|Half` (perfil gaming:
+poucos núcleos, boost alto, PPT não chapado) + `-GrupoCores all-grupos` com affinity, gravando
+`logs/ranking-<ts>.md` com tabela por grupo (effMed, stretch, WHEA, PASS/FAIL) + bloco `SUGESTAO:`
+com CSV pronto de 6 valores para aplicar via opção 3.
+
+Sweeps Single (1 thread por grupo, 6/6 grupos): **-25 → 6/6 PASS, zero WHEA; -30 → 6/6 PASS,
+zero WHEA**. Carga parcial dilui o effMed (núcleos ociosos derrubam o "Average Effective"),
+então o veredito em Single/Dual/Half ignora stretch — FAIL só por crash/TIMEOUT, Tctl > 90
+ou WHEA > 0 (stretch reportado como `N/A (carga parcial)`).
+
+Mix validado (SUGESTAO do ranking, sem forçar além do teto -30): **-29,-28,-30,-28,-30,-28**
+(núcleos 2 e 4 em -30; 0 em -29; 1, 3 e 5 em -28).
+
+Decisão: **perfil único** — o mix vai para a BIOS após 3 dias de uso real (inclui Tarkov com
+e sem Lossless Scaling). Sem modo-jogo/modo-normal separados: um perfil que passa no gaming
+e segura rajada de compilação vale para tudo.
