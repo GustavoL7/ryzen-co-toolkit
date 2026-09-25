@@ -69,7 +69,7 @@ At the end, you **save the winning configuration in the BIOS** (CLI offsets are 
 
 - **Game-like load modes**: `teste-ab.ps1 -ModoCarga Single|Dual|Half` simulates 1-core, 2-core and half-chip gaming load; combine with `-GrupoCores all-grupos` to rank core groups and pick strong cores for aggressive per-core CO (menu option 3).
 - **Profile order: gaming first, compile after**: `Single|Dual|Half` = capped-FPS gaming profile (few cores, high boost, PPT not pegged); `All` = compile-burst profile (~100% all-core). A CO that passes light load can still fail all-core and crash your compile.
-- **One-click modes, no UAC**: double-click `modo-jogo.bat` (validated gaming mix `-29,-28,-30,-28,-30,-28`) or `modo-normal.bat` (stable `-25` all-core) — both apply via the `PBO-Runner` task, volatile, reboot restores BIOS. Values fit the 6-core R5 5600, adjust the CSV length for other core counts.
+- **One-click modes, no UAC**: double-click `modo-jogo.bat` (validated gaming mix `-28,-27,-29,-27,-29,-27`) or `modo-normal.bat` (stable `-25` all-core) — both apply via the `PBO-Runner` task, volatile, reboot restores BIOS. Values fit the 6-core R5 5600, adjust the CSV length for other core counts.
 
 ## Compatibility
 

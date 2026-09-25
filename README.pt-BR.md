@@ -70,7 +70,7 @@ Ao final, você **grava a configuração vencedora na BIOS** (offsets via CLI s�
 
 - **Modos de carga tipo jogo**: `teste-ab.ps1 -ModoCarga Single|Dual|Half` simula jogo com 1 núcleo, 2 núcleos e metade do chip; combine com `-GrupoCores all-grupos` para ranquear grupos de núcleos e escolher os melhores para CO agressivo por núcleo (opção 3 do menu).
 - **Ordem dos perfis: gaming primeiro, compilação depois**: `Single|Dual|Half` = perfil gaming com FPS capado (poucos núcleos, boost alto, PPT sem cravar); `All` = perfil compilação (~100% all-core em rajada). Um CO que passa leve pode falhar all-core e crashar seu compile.
-- **Modos em 1 clique, sem UAC**: duplo-clique em `modo-jogo.bat` (mix gaming validado `-29,-28,-30,-28,-30,-28`) ou `modo-normal.bat` (estável `-25` all-core) — ambos aplicam via tarefa `PBO-Runner`, volátil, reboot restaura a BIOS. Valores para o R5 5600 de 6 núcleos, ajuste o tamanho do CSV para outro nº de núcleos.
+- **Modos em 1 clique, sem UAC**: duplo-clique em `modo-jogo.bat` (mix gaming validado `-28,-27,-29,-27,-29,-27`) ou `modo-normal.bat` (estável `-25` all-core) — ambos aplicam via tarefa `PBO-Runner`, volátil, reboot restaura a BIOS. Valores para o R5 5600 de 6 núcleos, ajuste o tamanho do CSV para outro nº de núcleos.
 
 ## Compatibilidade
 

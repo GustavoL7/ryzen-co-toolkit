@@ -189,3 +189,23 @@ Mix validado (SUGESTAO do ranking, sem forçar além do teto -30): **-29,-28,-30
 Decisão: **perfil único** — o mix vai para a BIOS após 3 dias de uso real (inclui Tarkov com
 e sem Lossless Scaling). Sem modo-jogo/modo-normal separados: um perfil que passa no gaming
 e segura rajada de compilação vale para tudo.
+
+---
+
+## Sessão sweet-spot — A/B/C 60 s + CPU-Z com B, 2026-09-25
+
+Base: ativos `-25` all-core, scalar `1x`, zero WHEA em 24 h, `PPT ~82 W` chapado em `All` (PBO ~80 W). `teste-ab.ps1 -Segundos 60` em `All` (12 threads) + `Dual` (4 threads, proxy gaming); comparada a fase B:
+
+| Config | All (eff/Tctl/PPT/SVI2) | Dual (clkReq/eff/Tctl/PPT) |
+|---|---|---|
+| A `-25x6` | 3869 MHz / 63,8 °C / 82 W / 0,988 V, stretch 99,9% | 4398 / 1661 / 73,4 °C / 79,4 W |
+| B `-28,-27,-29,-27,-29,-27` | 3908 MHz / 63,8 °C / 81,9 W / 0,975 V, 100% | 4095 / 1587 / 71,6 °C / 71,3 W |
+| C `-28,-27,-29,-27,-28,-27` | 3913 MHz / 63,6 °C / 81,9 W / 0,975 V, 100% | 4247 / 1685 / 73,1 °C / 77,7 W |
+
+Tudo PASS, zero WHEA. Em `Dual` o `eff` dilui (só 4 threads na média de 12) — o `clkReq` alto do software AMD é pedido, não entregue.
+
+CPU-Z 17.01.64 com B: 626,9/4443,7 (7,15) e depois 2 runs 621,2/4522,3 (7,28). `4522/82 W = 55,1 pts/W` vs `52,6` a 92 W: mais eficiente por watt, ~300 pts abaixo em absoluto — teto de potência, não de CO.
+
+Decisão: **B como sweet atual** (já roda Tarkov/Arena após o -1); C (núcleo 4 aliviado, pior no ranking de 23-09) reserva se crashar de novo. CO perto do teto — próximo ganho é `PPT 82→88/92 W` e `BO +100→+150` em Single. GPU (RX 6600 XT) já afinada há anos no Adrenalin, sem mexer.
+
+Pendente: 3 dias de jogo com B + WHEA zerado → gravar na BIOS. `modo-jogo.bat` atualizado para o B.

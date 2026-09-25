@@ -1,7 +1,7 @@
 @echo off
 rem modo-jogo.bat - aplica mix gaming validado via PBO-Runner sem UAC
 rem Uso com duplo-clique. Requer menu opcao 1 executada uma vez.
-rem Mix R5 5600 6C validado em 23-09-2026. Para outro CPU ajuste a
+rem Mix R5 5600 6C validado em 25-09-2026 (sweet B, screening 60s + Tarkov/Arena). Para outro CPU ajuste a
 rem quantidade de valores no CSV e valide por score mais WHEA.
 setlocal
 set "ROOT=%~dp0"
@@ -14,7 +14,7 @@ if errorlevel 1 goto NO_TASK
 if not exist "%EXE%" goto NO_EXE
 if not exist "%ROOT%logs" mkdir "%ROOT%logs" >NUL 2>NUL
 if exist "%OUT%" del "%OUT%"
->"%CMD%" echo "%EXE%" --offset -29,-28,-30,-28,-30,-28
+>"%CMD%" echo "%EXE%" --offset -28,-27,-29,-27,-29,-27
 schtasks /Run /TN PBO-Runner >NUL 2>NUL
 echo Aguardando PBO-Runner - modo jogo...
 set /a TRIES=30
